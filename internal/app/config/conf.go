@@ -3,13 +3,17 @@ package config
 import (
 	"flag"
 	"os"
+	"time"
 
 	"github.com/shulganew/GophKeeper/internal/app/validators"
 	"go.uber.org/zap"
 )
 
+const TokenExp = time.Hour * 3600
+const DataBaseType = "postgres"
+
 type Config struct {
-	// flag -a, Market address
+	// flag -a, Server address
 	Address string
 
 	// dsn connection string
