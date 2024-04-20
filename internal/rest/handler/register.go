@@ -11,8 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const authPrefix = "Bearer "
-
 type HandlerRegister struct {
 	userSrv *services.UserService
 	conf    *config.Config
@@ -56,7 +54,7 @@ func (u *HandlerRegister) AddUser(res http.ResponseWriter, req *http.Request) {
 	jwt, _ := services.BuildJWTString(user.UUID, u.conf.PassJWT)
 
 	res.Header().Add("Content-Type", "text/plain")
-	res.Header().Add("Authorization", authPrefix+jwt)
+	res.Header().Add("Authorization", config.AuthPrefix+jwt)
 
 	// set status code 200
 	res.WriteHeader(http.StatusOK)

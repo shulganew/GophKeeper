@@ -9,6 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
+const AuthPrefix = "Bearer "
 const TokenExp = time.Hour * 3600
 const DataBaseType = "postgres"
 

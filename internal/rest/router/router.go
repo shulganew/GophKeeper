@@ -8,6 +8,7 @@ import (
 	"github.com/shulganew/GophKeeper/internal/app"
 	"github.com/shulganew/GophKeeper/internal/entities"
 	"github.com/shulganew/GophKeeper/internal/rest/handler"
+	"github.com/shulganew/GophKeeper/internal/rest/middlewares"
 )
 
 // Chi Router for application.
@@ -23,11 +24,21 @@ func RouteShear(application *app.UseCases) (r *chi.Mux) {
 	})
 
 	r.Route("/", func(r chi.Router) {
-		userReg := handler.NewHandlerRegister(conf, application.UserService())
-		r.Post("/api/user/register", http.HandlerFunc(userReg.AddUser))
+		// User registration.
+		r.Route("/api/user/auth", func(r chi.Router) {
+			userReg := handler.NewHandlerRegister(conf, application.UserService())
+			r.Post("/register", http.HandlerFunc(userReg.AddUser))
+			userLogin := handler.NewHandlerLogin(conf, application.UserService())
+			r.Post("/login", http.HandlerFunc(userLogin.LoginUser))
 
-		userLogin := handler.NewHandlerLogin(conf, application.UserService())
-		r.Post("/api/user/login", http.HandlerFunc(userLogin.LoginUser))
+		})
+		// Add auth/
+
+		r.Route("/api/user/site", func(r chi.Router) {
+			r.Use(middlewares.Auth)
+			siteAdd := handler.NewSiteAdd(conf, application.SiteService())
+			r.Post("/add", http.HandlerFunc(siteAdd.SiteAdd))
+		})
 
 	})
 	return

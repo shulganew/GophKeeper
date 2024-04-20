@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gofrs/uuid"
+
 	"github.com/shulganew/GophKeeper/internal/entities"
 	"github.com/shulganew/GophKeeper/internal/services"
 
@@ -13,6 +14,7 @@ import (
 
 func Auth(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		// Check user JWT in Header.
 		passVal := req.Context().Value(entities.CtxPassKey{})
 		pass, ok := passVal.(string)
 		if !ok {
@@ -21,13 +23,12 @@ func Auth(h http.Handler) http.Handler {
 			return
 		}
 		jwt, isSet := services.GetHeaderJWT(req.Header)
-
 		var userID uuid.UUID
 		var err error
 		if isSet {
 			userID, err = services.GetUserIDJWT(jwt, pass)
 			if err != nil {
-				zap.S().Infoln("Can't get user UUID form JWT.", err)
+				zap.S().Errorln("Can't get user UUID form JWT.", err)
 				isSet = false
 			}
 		}

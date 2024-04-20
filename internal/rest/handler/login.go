@@ -12,13 +12,13 @@ import (
 )
 
 type HandlerLogin struct {
-	usrSrt *services.UserService
+	usrSrv *services.UserService
 	conf   *config.Config
 }
 
 func NewHandlerLogin(conf *config.Config, userServ *services.UserService) *HandlerLogin {
 
-	return &HandlerLogin{usrSrt: userServ, conf: conf}
+	return &HandlerLogin{usrSrv: userServ, conf: conf}
 }
 
 // @Summary      Login user handler
@@ -37,7 +37,7 @@ func (h *HandlerLogin) LoginUser(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	userID, isValid := h.usrSrt.IsValid(req.Context(), user.Login, user.Password)
+	userID, isValid := h.usrSrv.IsValid(req.Context(), user.Login, user.Password)
 	if !isValid {
 		// Wrond user login or password 401
 		http.Error(res, "Wrong login or password", http.StatusUnauthorized)
@@ -50,13 +50,13 @@ func (h *HandlerLogin) LoginUser(res http.ResponseWriter, req *http.Request) {
 	jwt, _ := services.BuildJWTString(*userID, h.conf.PassJWT)
 
 	res.Header().Add("Content-Type", "text/plain")
-	res.Header().Add("Authorization", jwt)
+	res.Header().Add("Authorization", config.AuthPrefix+jwt)
 
 	// set status code 200
 	res.WriteHeader(http.StatusOK)
 
 	_, err := res.Write([]byte("User loged in."))
 	if err != nil {
-		zap.S().Errorln("Can't write to response in LoginUser  handler", err)
+		zap.S().Errorln("Can't write to response in LoginUser handler", err)
 	}
 }

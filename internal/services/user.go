@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gofrs/uuid"
@@ -128,9 +129,10 @@ func GetJWT(tokenString string, pass string) (token *jwt.Token, err error) {
 
 // Check JWT is Set to Header.
 func GetHeaderJWT(header http.Header) (jwt string, isSet bool) {
-	auth := header.Get("Authorization")
-	if auth == "" {
-		return "", false
+	authHeader := header.Get("Authorization")
+	if strings.HasPrefix(authHeader, config.AuthPrefix) {
+		return authHeader[len(config.AuthPrefix):], true
 	}
-	return auth, true
+	return "", false
+
 }
