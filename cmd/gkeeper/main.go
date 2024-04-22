@@ -9,6 +9,10 @@ import (
 
 func main() {
 	zap.S().Infoln("Starting GophKeeper...")
+
+	// Get application config.
+	conf := config.InitConfig()
+
 	// Init application logging.
 	app.InitLog()
 
@@ -17,17 +21,19 @@ func main() {
 
 	zap.S().Infoln("Hello passwor master!")
 
-	conf := config.InitConfig()
-
 	// Error channel.
 	componentsErrs := make(chan error, 1)
 
+	a, err := app.InitApp(ctx, conf)
+	if err != nil {
+		panic(err)
+	}
+
 	// Create router.
-	rt := router.RouteShear(conf)
+	rt := router.RouteShear(conf, a)
 
 	// Start web server.
-	restDone := app.StartREST(ctx, conf, componentsErrs, rt)
-
+	restDone := app.StartREST(ctx, &conf, componentsErrs, rt)
 	//Graceful shutdown.
 	app.Graceful(ctx, cancel, componentsErrs)
 

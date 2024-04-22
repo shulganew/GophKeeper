@@ -3,13 +3,18 @@ package config
 import (
 	"flag"
 	"os"
+	"time"
 
 	"github.com/shulganew/GophKeeper/internal/app/validators"
 	"go.uber.org/zap"
 )
 
+const AuthPrefix = "Bearer "
+const TokenExp = time.Hour * 3600
+const DataBaseType = "postgres"
+
 type Config struct {
-	// flag -a, Market address
+	// flag -a, Server address
 	Address string
 
 	// dsn connection string
@@ -18,7 +23,7 @@ type Config struct {
 	PassJWT string
 }
 
-func InitConfig() *Config {
+func InitConfig() Config {
 	config := Config{}
 	// read command line argue
 	serverAddress := flag.String("a", "localhost:8080", "Service GKeeper address")
@@ -62,5 +67,5 @@ func InitConfig() *Config {
 	}
 
 	zap.S().Infoln("Configuration complite")
-	return &config
+	return config
 }
