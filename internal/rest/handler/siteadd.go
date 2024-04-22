@@ -6,17 +6,17 @@ import (
 
 	"github.com/shulganew/GophKeeper/internal/app/config"
 	"github.com/shulganew/GophKeeper/internal/entities"
+	"github.com/shulganew/GophKeeper/internal/rest/middlewares"
 	"github.com/shulganew/GophKeeper/internal/services"
 	"go.uber.org/zap"
 )
 
 type HandlerSiteAdd struct {
 	siteSrv *services.SiteService
-	conf    *config.Config
+	conf    config.Config
 }
 
-func NewSiteAdd(conf *config.Config, siteSrv *services.SiteService) *HandlerSiteAdd {
-
+func NewSiteAdd(conf config.Config, siteSrv *services.SiteService) *HandlerSiteAdd {
 	return &HandlerSiteAdd{siteSrv: siteSrv, conf: conf}
 }
 
@@ -30,7 +30,7 @@ func NewSiteAdd(conf *config.Config, siteSrv *services.SiteService) *HandlerSite
 // @Router       / [get]
 func (s *HandlerSiteAdd) SiteAdd(res http.ResponseWriter, req *http.Request) {
 	// get UserID from cxt values
-	auth := req.Context().Value(entities.MiddlwDTO{}).(entities.MiddlwDTO)
+	auth := req.Context().Value(middlewares.AuthContext{}).(middlewares.AuthContext)
 	if !auth.IsRegistered() {
 		http.Error(res, "JWT not found.", http.StatusUnauthorized)
 		return
@@ -60,5 +60,5 @@ func (s *HandlerSiteAdd) SiteAdd(res http.ResponseWriter, req *http.Request) {
 	_, err = res.Write([]byte("User loged in."))
 	if err != nil {
 		zap.S().Errorln("Can't write to response in LoginUser handler", err)
-	}
+	} 
 }

@@ -51,7 +51,7 @@ func TestUser(t *testing.T) {
 	}
 
 	app.InitLog()
-	conf := &config.Config{}
+	conf := config.Config{}
 
 	// Init application.
 	conf.Address = "localhost:8080"

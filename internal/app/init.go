@@ -39,9 +39,8 @@ func InitContext() (ctx context.Context, cancel context.CancelFunc) {
 	return
 }
 
-func InitApp(ctx context.Context) (application *UseCases, err error) {
-	// Get application config.
-	conf := config.InitConfig()
+func InitApp(ctx context.Context, conf config.Config) (application *UseCases, err error) {
+
 	// Connection for Keeper Database.
 	db, err := sqlx.Connect(config.DataBaseType, conf.DSN)
 	if err != nil {

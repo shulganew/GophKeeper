@@ -8,18 +8,14 @@ import (
 
 // A container pattern.
 type UseCases struct {
-	stor    *storage.Repo
-	conf    *config.Config
 	userSrv *services.UserService
 	siteSrv *services.SiteService
 }
 
-func NewUseCases(conf *config.Config, stor *storage.Repo) *UseCases {
+func NewUseCases(conf config.Config, stor *storage.Repo) *UseCases {
 	cases := &UseCases{}
-	cases.conf = conf
 	cases.userSrv = services.NewUserService(stor)
 	cases.siteSrv = services.NewSiteService(stor)
-	cases.stor = stor
 	return cases
 }
 
@@ -29,12 +25,4 @@ func (c *UseCases) UserService() *services.UserService {
 
 func (c *UseCases) SiteService() *services.SiteService {
 	return c.siteSrv
-}
-
-func (c *UseCases) Config() *config.Config {
-	return c.conf
-}
-
-func (c *UseCases) Repo() *storage.Repo {
-	return c.stor
 }

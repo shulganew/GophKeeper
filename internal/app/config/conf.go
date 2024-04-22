@@ -23,7 +23,7 @@ type Config struct {
 	PassJWT string
 }
 
-func InitConfig() *Config {
+func InitConfig() Config {
 	config := Config{}
 	// read command line argue
 	serverAddress := flag.String("a", "localhost:8080", "Service GKeeper address")
@@ -67,5 +67,5 @@ func InitConfig() *Config {
 	}
 
 	zap.S().Infoln("Configuration complite")
-	return &config
+	return config
 }

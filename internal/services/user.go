@@ -92,7 +92,7 @@ func (r UserService) CheckPassword(password string, hashedPassword string) error
 
 // Create JWT token.
 func BuildJWTString(userID uuid.UUID, pass string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, entities.Claims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, entities.JWT{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(config.TokenExp)),
 		},
@@ -109,7 +109,7 @@ func BuildJWTString(userID uuid.UUID, pass string) (string, error) {
 
 // Retrive user's UUID from JWT string.
 func GetUserIDJWT(tokenString string, pass string) (userID uuid.UUID, err error) {
-	claims := &entities.Claims{}
+	claims := &entities.JWT{}
 	_, err = jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
 		return []byte(pass), nil
 	})
@@ -119,7 +119,7 @@ func GetUserIDJWT(tokenString string, pass string) (userID uuid.UUID, err error)
 
 // Create jwt token from string.
 func GetJWT(tokenString string, pass string) (token *jwt.Token, err error) {
-	claims := &entities.Claims{}
+	claims := &entities.JWT{}
 	token, err = jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
 		return []byte(pass), nil
 	})

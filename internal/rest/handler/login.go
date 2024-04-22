@@ -13,10 +13,10 @@ import (
 
 type HandlerLogin struct {
 	usrSrv *services.UserService
-	conf   *config.Config
+	conf   config.Config
 }
 
-func NewHandlerLogin(conf *config.Config, userServ *services.UserService) *HandlerLogin {
+func NewHandlerLogin(conf config.Config, userServ *services.UserService) *HandlerLogin {
 
 	return &HandlerLogin{usrSrv: userServ, conf: conf}
 }

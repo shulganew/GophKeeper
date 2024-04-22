@@ -2,12 +2,17 @@ package main
 
 import (
 	"github.com/shulganew/GophKeeper/internal/app"
+	"github.com/shulganew/GophKeeper/internal/app/config"
 	"github.com/shulganew/GophKeeper/internal/rest/router"
 	"go.uber.org/zap"
 )
 
 func main() {
 	zap.S().Infoln("Starting GophKeeper...")
+
+	// Get application config.
+	conf := config.InitConfig()
+
 	// Init application logging.
 	app.InitLog()
 
@@ -19,15 +24,16 @@ func main() {
 	// Error channel.
 	componentsErrs := make(chan error, 1)
 
-	a, err := app.InitApp(ctx)
+	a, err := app.InitApp(ctx, conf)
 	if err != nil {
 		panic(err)
 	}
+
 	// Create router.
-	rt := router.RouteShear(a)
+	rt := router.RouteShear(conf, a)
 
 	// Start web server.
-	restDone := app.StartREST(ctx, a.Config(), componentsErrs, rt)
+	restDone := app.StartREST(ctx, &conf, componentsErrs, rt)
 	//Graceful shutdown.
 	app.Graceful(ctx, cancel, componentsErrs)
 

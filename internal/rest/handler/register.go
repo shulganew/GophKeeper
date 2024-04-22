@@ -13,10 +13,10 @@ import (
 
 type HandlerRegister struct {
 	userSrv *services.UserService
-	conf    *config.Config
+	conf    config.Config
 }
 
-func NewHandlerRegister(conf *config.Config, usrSrv *services.UserService) *HandlerRegister {
+func NewHandlerRegister(conf config.Config, usrSrv *services.UserService) *HandlerRegister {
 	return &HandlerRegister{userSrv: usrSrv, conf: conf}
 }
 
