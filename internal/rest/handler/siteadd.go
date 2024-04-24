@@ -1,5 +1,6 @@
 package handler
 
+/*
 import (
 	"encoding/json"
 	"net/http"
@@ -59,3 +60,4 @@ func (s *HandlerSiteAdd) SiteAdd(res http.ResponseWriter, req *http.Request) {
 		zap.S().Errorln("Can't write to response in LoginUser handler", err)
 	}
 }
+*/

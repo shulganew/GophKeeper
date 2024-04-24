@@ -1,6 +1,11 @@
 # GophKeeper
 Password keeper - server (Yandex praktikum final project)
 
+## Generate oapi
+```bash
+go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=internal/rest/oapi/cfg.yaml --package oapi internal/rest/oapi/keeper.yaml
+```
+/home/igor/Desktop/code/GophKeeper/internal/rest/oapi/keeper.yaml
 ## Mock
 ```bash
 mockgen -source=internal/services/user.go \

@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,70 +15,97 @@ import (
 	"github.com/lib/pq"
 	"github.com/shulganew/GophKeeper/internal/app/config"
 	"github.com/shulganew/GophKeeper/internal/entities"
+	"github.com/shulganew/GophKeeper/internal/rest/oapi"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// User creation, registration, validation and autentification service.
-type UserService struct {
-	stor userRepo
-}
+// Register new user in Keeper.
+func (k *Keeper) CreateUser(w http.ResponseWriter, r *http.Request) {
+	var user oapi.NewUser
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		// If can't decode 400
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-type userRepo interface {
-	AddUser(ctx context.Context, login string, hash string) (*uuid.UUID, error)
-	GetByLogin(ctx context.Context, login string) (*entities.User, error)
-}
-
-func NewUserService(stor userRepo) *UserService {
-	return &UserService{stor: stor}
-}
-
-// Register new user in market.
-func (r *UserService) CreateUser(ctx context.Context, login string, password string) (userID *uuid.UUID, existed bool, err error) {
 	// Set hash as user password.
-	hash, err := r.HashPassword(password)
+	hash, err := k.HashPassword(user.Password)
 	if err != nil {
 		zap.S().Errorln("Error creating hash from password")
-		return nil, true, err
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
 
 	// Add user to database.
-	userID, err = r.stor.AddUser(ctx, login, hash)
+	userID, err := k.stor.AddUser(r.Context(), user.Login, hash)
 	if err != nil {
 		var pgErr *pq.Error
 		// If URL exist in DataBase
 		if errors.As(err, &pgErr) && pgerrcode.UniqueViolation == pgErr.Code {
-			zap.S().Infoln("User with login alredy existed: ", login)
-			return nil, true, nil
+			errt := "User's login is used"
+			zap.S().Infoln(errt, err)
+			http.Error(w, errt, http.StatusConflict)
+			return
 		}
-		return nil, false, err
+		return
 	}
 
-	return userID, false, nil
+	jwt, _ := BuildJWTString(*userID, k.conf.PassJWT)
+	w.Header().Add("Content-Type", "text/plain")
+	w.Header().Add("Authorization", config.AuthPrefix+jwt)
+
+	// set status code 200
+	w.WriteHeader(http.StatusOK)
+
+	_, err = w.Write([]byte("User added."))
+	if err != nil {
+		zap.S().Errorln("Can't write to response in SetUser handler", err)
+	}
+
 }
 
 // Validate user in Keeper, if sucsess it return user's id.
-func (r *UserService) IsValid(ctx context.Context, login string, pass string) (userID *uuid.UUID, isValid bool) {
+func (k *Keeper) Login(w http.ResponseWriter, r *http.Request) {
+	var oapiUser oapi.NewUser
+	if err := json.NewDecoder(r.Body).Decode(&oapiUser); err != nil {
+		// If can't decode 400
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	// Get User from storage
-	user, err := r.stor.GetByLogin(ctx, login)
-	zap.S().Infof("User form db: %v \n", user)
+	dbUser, err := k.stor.GetByLogin(r.Context(), oapiUser.Login)
+	zap.S().Infof("User form db: %v \n", dbUser)
 	if err != nil {
 		zap.S().Infoln("User not found by login. ", err)
-		return nil, false
+		http.Error(w, "Wrong login or password", http.StatusUnauthorized)
+		return
 	}
 
 	// Check pass is correct
-	err = r.CheckPassword(pass, user.PassHash)
+	err = k.CheckPassword(oapiUser.Password, dbUser.PassHash)
 	if err != nil {
-		zap.S().Errorln("Pass not valid: ", err)
-		return nil, false
+		http.Error(w, "Wrong login or password", http.StatusUnauthorized)
 	}
 
-	return &user.UUID, true
+	zap.S().Debug("Login sucsess, user id is: ", dbUser.UUID)
+	jwt, _ := BuildJWTString(dbUser.UUID, k.conf.PassJWT)
+
+	w.Header().Add("Content-Type", "text/plain")
+	w.Header().Add("Authorization", config.AuthPrefix+jwt)
+
+	// set status code 200
+	w.WriteHeader(http.StatusOK)
+
+	_, err = w.Write([]byte("User loged in."))
+	if err != nil {
+		zap.S().Errorln("Can't write to response in LoginUser handler", err)
+	}
 }
 
 // HashPassword returns the bcrypt hash of the password.
-func (r UserService) HashPassword(password string) (string, error) {
+func (k Keeper) HashPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", fmt.Errorf("failed to hash password: %w", err)
@@ -86,7 +114,7 @@ func (r UserService) HashPassword(password string) (string, error) {
 }
 
 // CheckPassword checks if the provided password is correct or not.
-func (r UserService) CheckPassword(password string, hashedPassword string) error {
+func (k Keeper) CheckPassword(password string, hashedPassword string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
 }
 
@@ -127,7 +155,7 @@ func GetJWT(tokenString string, pass string) (token *jwt.Token, err error) {
 	return token, err
 }
 
-// Check JWT is Set to Header.
+// Check JWT is Set to Headek.
 func GetHeaderJWT(header http.Header) (jwt string, isSet bool) {
 	authHeader := header.Get("Authorization")
 	if strings.HasPrefix(authHeader, config.AuthPrefix) {

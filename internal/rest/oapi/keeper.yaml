@@ -1,0 +1,99 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Igor's Gokeeper
+  description: GophKeeper is asequrity password service (server part)
+  termsOfService: https://swagger.io/terms/
+  contact:
+    name: Swagger API Team
+    email: apiteam@swagger.io
+    url: https://swagger.io
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+paths:
+  /api/user/auth/register:
+    post:
+      summary: User registration
+      description: Handler make new user ristration
+      operationId: CreateUser
+      parameters:
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NewUser'
+        '400':
+          description: Error creating hash from password
+        '409':
+          description: Login is used
+        '500':
+          description: Can't get UUID or user hash 
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/user/auth/login:
+    post:
+      summary: User login
+      description: Handler make existing user auth (login)
+      operationId: Login
+      parameters:
+      responses:
+        '200':
+          description: Successful login
+        '400':
+          description: Error decode json
+        '401':
+          description: Wrong login or password
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    User:
+      allOf:
+        - $ref: '#/components/schemas/NewUser'
+        - required:
+            - userID
+          properties:
+            userID:
+              type: string
+              format: uuid
+              description: User id
+
+    NewUser:
+      required:
+        - login
+        - password
+      properties:
+        login:
+          type: string
+          description: User login from registration
+        password:
+          type: string
+          description: User pass from registartion
+
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: Error code
+        message:
+          type: string
+          description: Error message
+
+          

@@ -1,5 +1,6 @@
 package services
 
+/*
 import (
 	"context"
 
@@ -28,3 +29,4 @@ func (r *SiteService) AddSite(ctx context.Context, userID, site, slogin, spw str
 	return
 }
 
+*/

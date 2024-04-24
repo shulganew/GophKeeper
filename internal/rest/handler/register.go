@@ -1,5 +1,6 @@
 package handler
 
+/*
 import (
 	"encoding/json"
 
@@ -64,3 +65,4 @@ func (u *HandlerRegister) AddUser(res http.ResponseWriter, req *http.Request) {
 		zap.S().Errorln("Can't write to response in SetUser handler", err)
 	}
 }
+*/

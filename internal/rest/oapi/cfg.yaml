@@ -1,0 +1,8 @@
+package: oapi
+generate:
+  chi-server: true
+  models: true
+  embedded-spec: true
+compatibility:
+  apply-chi-middleware-first-to-last: true
+output: internal/rest/oapi/gokeeper.gen.go

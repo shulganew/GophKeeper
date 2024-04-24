@@ -3,7 +3,9 @@ package main
 import (
 	"github.com/shulganew/GophKeeper/internal/app"
 	"github.com/shulganew/GophKeeper/internal/app/config"
+	"github.com/shulganew/GophKeeper/internal/rest/oapi"
 	"github.com/shulganew/GophKeeper/internal/rest/router"
+	"github.com/shulganew/GophKeeper/internal/services"
 	"go.uber.org/zap"
 )
 
@@ -19,18 +21,30 @@ func main() {
 	// Root app context.
 	ctx, cancel := app.InitContext()
 
-	zap.S().Infoln("Hello passwor master!")
-
 	// Error channel.
 	componentsErrs := make(chan error, 1)
 
-	a, err := app.InitApp(ctx, conf)
+	// Init Repo
+	stor, err := app.InitStore(ctx, conf)
 	if err != nil {
-		panic(err)
+		zap.S().Fatalln(err)
 	}
 
+	swagger, err := oapi.GetSwagger()
+	if err != nil {
+		zap.S().Fatalln(err)
+	}
+	// Clear out the servers array in the swagger spec, that skips validating
+	// that server names match. We don't know how this thing will be run.
+	swagger.Servers = nil
+
 	// Create router.
-	rt := router.RouteShear(conf, a)
+	rt := router.RouteShear(conf, swagger)
+
+	keeper := services.NewKeeper(stor, conf)
+
+	// We now register our petStore above as the handler for the interface
+	oapi.HandlerFromMux(keeper, rt)
 
 	// Start web server.
 	restDone := app.StartREST(ctx, &conf, componentsErrs, rt)

@@ -1,16 +1,6 @@
 package handler
 
-import (
-	"encoding/json"
-	"net/http"
-
-	"github.com/shulganew/GophKeeper/internal/app/config"
-	"github.com/shulganew/GophKeeper/internal/entities"
-	"github.com/shulganew/GophKeeper/internal/services"
-
-	"go.uber.org/zap"
-)
-
+/*
 type HandlerLogin struct {
 	usrSrv *services.UserService
 	conf   config.Config
@@ -30,7 +20,6 @@ func NewHandlerLogin(conf config.Config, userServ *services.UserService) *Handle
 // @Router       /{id} [get]
 func (h *HandlerLogin) LoginUser(res http.ResponseWriter, req *http.Request) {
 	var user entities.User
-
 	if err := json.NewDecoder(req.Body).Decode(&user); err != nil {
 		// If can't decode 400
 		http.Error(res, err.Error(), http.StatusBadRequest)
@@ -60,3 +49,4 @@ func (h *HandlerLogin) LoginUser(res http.ResponseWriter, req *http.Request) {
 		zap.S().Errorln("Can't write to response in LoginUser handler", err)
 	}
 }
+*/
