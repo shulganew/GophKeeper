@@ -136,3 +136,9 @@ func GetHeaderJWT(header http.Header) (jwt string, isSet bool) {
 	return "", false
 
 }
+
+// Check if contex has JWT valid user token from auth middleware.
+func CheckUserAuth(ctx context.Context) (userID string, isRegistered bool) {
+	auth := ctx.Value(entities.AuthContext{}).(entities.AuthContext)
+	return auth.GetUserID().String(), isRegistered
+}
