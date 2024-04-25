@@ -12,7 +12,7 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
 paths:
-  /api/user/auth/register:
+  /api/auth/register:
     post:
       summary: User registration
       description: Handler make new user ristration
@@ -39,7 +39,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /api/user/auth/login:
+  /api/auth/login:
     post:
       summary: User login
       description: Handler make existing user auth (login)
@@ -58,6 +58,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /api/user/site/add:
+    post:
+      summary: Add new site 
+      description: Add new site credentials  - site, login and password.
+      operationId: AddSite
+      parameters:
+      responses:
+        '201':
+          description: Credentials added
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NewSite'
+        '400':
+          description: Error decode json
+        '401':
+          description: User not authorized
+        '500':
+          description: Internal error site adding
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     User:
@@ -70,7 +97,6 @@ components:
               type: string
               format: uuid
               description: User id
-
     NewUser:
       required:
         - login
@@ -82,7 +108,21 @@ components:
         password:
           type: string
           description: User pass from registartion
-
+    NewSite:
+      required:
+        - site
+        - slogin
+        - spw
+      properties:
+        site:
+          type: string
+          description: Site URL
+        slogin:
+          type: string
+          description: login for site
+        spw:
+          type: string
+          description: passwor for site
     Error:
       required:
         - code

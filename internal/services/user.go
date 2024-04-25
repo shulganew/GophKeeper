@@ -24,6 +24,7 @@ import (
 func (k *Keeper) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user oapi.NewUser
 	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		zap.S().Errorln("Can't decode json")
 		// If can't decode 400
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -55,8 +56,8 @@ func (k *Keeper) CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/plain")
 	w.Header().Add("Authorization", config.AuthPrefix+jwt)
 
-	// set status code 200
-	w.WriteHeader(http.StatusOK)
+	// set status code 201
+	w.WriteHeader(http.StatusCreated)
 
 	_, err = w.Write([]byte("User added."))
 	if err != nil {

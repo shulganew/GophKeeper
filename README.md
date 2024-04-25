@@ -2,6 +2,10 @@
 Password keeper - server (Yandex praktikum final project)
 
 ## Generate oapi
+Use make or bash command or //TODO build generate
+```
+make oapi
+```
 ```bash
 go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=internal/rest/oapi/cfg.yaml --package oapi internal/rest/oapi/keeper.yaml
 ```

@@ -17,7 +17,7 @@ func RouteShear(conf config.Config, swagger *openapi3.T) (r *chi.Mux) {
 	r = chi.NewRouter()
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
-	r.Use(middleware.OapiRequestValidator(swagger))
+
 	// Send password for enctription to middlewares.
 	r.Use(func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -25,15 +25,9 @@ func RouteShear(conf config.Config, swagger *openapi3.T) (r *chi.Mux) {
 			h.ServeHTTP(w, r.WithContext(ctx))
 		})
 	})
+	r.Use(middlewares.MidlewZip)
+	r.Use(middlewares.Auth)
+	r.Use(middleware.OapiRequestValidator(swagger))
 
-	r.Route("/", func(r chi.Router) {
-		r.Use(middlewares.MidlewZip)
-		r.Use(middlewares.Auth)
-
-		r.Route("/api/user/site", func(r chi.Router) {
-			r.Use(middlewares.Auth)
-		})
-
-	})
 	return
 }

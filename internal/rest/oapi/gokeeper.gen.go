@@ -26,6 +26,18 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// NewSite defines model for NewSite.
+type NewSite struct {
+	// Site Site URL
+	Site string `json:"site"`
+
+	// Slogin login for site
+	Slogin string `json:"slogin"`
+
+	// Spw passwor for site
+	Spw string `json:"spw"`
+}
+
 // NewUser defines model for NewUser.
 type NewUser struct {
 	// Login User login from registration
@@ -38,11 +50,14 @@ type NewUser struct {
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// User login
-	// (POST /api/user/auth/login)
+	// (POST /api/auth/login)
 	Login(w http.ResponseWriter, r *http.Request)
 	// User registration
-	// (POST /api/user/auth/register)
+	// (POST /api/auth/register)
 	CreateUser(w http.ResponseWriter, r *http.Request)
+	// Add new site
+	// (POST /api/user/site/add)
+	AddSite(w http.ResponseWriter, r *http.Request)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -50,14 +65,20 @@ type ServerInterface interface {
 type Unimplemented struct{}
 
 // User login
-// (POST /api/user/auth/login)
+// (POST /api/auth/login)
 func (_ Unimplemented) Login(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // User registration
-// (POST /api/user/auth/register)
+// (POST /api/auth/register)
 func (_ Unimplemented) CreateUser(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Add new site
+// (POST /api/user/site/add)
+func (_ Unimplemented) AddSite(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -91,6 +112,21 @@ func (siw *ServerInterfaceWrapper) CreateUser(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateUser(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// AddSite operation middleware
+func (siw *ServerInterfaceWrapper) AddSite(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddSite(w, r)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -214,10 +250,13 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/user/auth/login", wrapper.Login)
+		r.Post(options.BaseURL+"/api/auth/login", wrapper.Login)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/user/auth/register", wrapper.CreateUser)
+		r.Post(options.BaseURL+"/api/auth/register", wrapper.CreateUser)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/user/site/add", wrapper.AddSite)
 	})
 
 	return r
@@ -226,18 +265,20 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8xUTU/jSBD9K63alWAlrx0Ce1ifFrGIjRaxK2XQHEYcWnbF7sH9QVWbECH/91F3O5kE",
-	"B6G5zSkd16vP96peobLaWYPGM5SvwFWLWsbnNZGl8HBkHZJXGD9XtsbwWyNXpJxX1kCZwCLaMlhZ0tJD",
-	"Ccr48zlk4DcO019skGDIQCOzbN4NtDXvXNmTMg0MQwaET70irKH8AmPCLfxhyOAO1/eMRwrvbKPMNGEA",
-	"i2gTK7JaEDaKPclonuTPwEnmtaX6nUjBvB9I0vFAbxpJxe1FfxgCRJmVTUM3XlY+PFFL1UEJ0imPUv/F",
-	"a9k0SLmykIGROiRZpm/i8v+F+IRSQwY9BafWe8dlUew5DdmbNm6sa/9FdEhCsZCMTz0pvxHb0gQjPasK",
-	"xWl4xJbJ/wYZdKpCw5HTsY5LJ6sWxTyfTSpYr9e5jObcUlOMvlzcLq6u75bXv8/zWd563YX6PJLm/1bL",
-	"lPdoG0XEFGHOyncBs2gsnbC4sY+xF8jgGYlTi2f5LJ+FyNahkU5BCefxUyDAt1EuhXSq6BmpkL1vi516",
-	"nGU/5f4faeoOSWj5iAJfFHtlGhHcRXAXp9E/TClIMoprUUMJtyPvhOxsGEAIPZ/NphmWfVUh86rvklpD",
-	"+RfHgGmDagy7Ib6yHZFnU+RnsqYZtW9pR3CSxEr2nd9qD018Suc6VcXqixh5dzHC61fCFZTwS/H9pBTj",
-	"PSnSMYmaPqyhN/jisPJYCxwxGXCvtaTNwXZGwxtS0oqNy/4xLwbXiRLa3/BDQq4Ipcd4QSasnP3QOJRH",
-	"zR/NZXutht2BkERyc2xScRRVLK/+gPyICgJsJbfpGu2TezH7c+oZlRg2vucU/49j8a+kOfGiQS/u7xd/",
-	"B9XEgYY8P51sDi75MAzDtwAAAP//1x+Or+0GAAA=",
+	"H4sIAAAAAAAC/8xV34/bNgz+VwRuQDvAtXPX7mF+2uF26IIdumHZYQ9DHwiLsbXakkrJTW9F/vdBP+Im",
+	"Z1/TvQz3FEX6SH4kP9KfoDGDNZq0d1B/Atd0NGA83jAbDgfLxhJ7RfG6MZLCryTXsLJeGQ11Aov4VsDW",
+	"8IAealDav7yEAvy9pfSXWmLYFzCQc9g+6ujwPJk6z0q3sN8XwPR+VEwS6r8gBzzA3+4LeEO7jfI0J+7y",
+	"7Wm8gBV3v9/OQxXgetMqPbeJ12JrWESfS5Z2Nzez6NzO8BcMH2SXQZlG8ppTvHO00JtH+AawyKTZDIKp",
+	"Vc4zxucF9pmofMRTeD52hLzs6EE2hywm72/3AaL01iRdaY+ND0caUPVQA1rlCYcf3Q7blrhUBgrQOIQg",
+	"m3Qnrn5biz8IByhg5GDUeW9dXVVHRvviQRqvje1+IbLEQjmBjt6PrPy9OFATjviDakg8D4eYMvvvoIBe",
+	"NaRdlFHmcWWx6UhclqsZg91uV2J8Lg23VbZ11e36+ubN5ubFZbkqOz/0gZ8nHtyv202Ku5hGFTFVqLPy",
+	"fcCsW8PPnHht3sVcoIAPxC6leFGuylXwbCxptApqeBmvQgN8F+VSoVUVjr6rJuFY4/y87T+jlj2xGPAd",
+	"CfqonFe6FWMQQzAXz6N9KFBQY9TVWkINt7nlTM6akHtwfblaLYzh2DTk3Hbsk1AD81dLwLQfJIXJF387",
+	"k5EXc+SfbHSbZW946m1SwxbH3h9kRzoe0dpeNZF9FT1P+zCcvmXaQg3fVJ8XZpW3ZZVWZZTzKYdR00dL",
+	"jScpKGMKcOMwIN+fDGZ8+NyPNFh5xM+3RNMudYOP5/q0F9dM6CnujVlDLv5TJZSnwZ0ryWFH7ae1gMx4",
+	"v1SkWIUm0pNn+h5RQXsdui7toOO+vlr9MLeMIgxzPrrk//sl/9eon3nRkhd3d+ufgmBiQUOcJ6eYk/09",
+	"CSfwrcIno0IpHxfOlZRRLwEZ6ilJe4W9E+JFvCvyyKCWU23LmZqupNykr9P/IqUY6yukdH2UD0p5Vk9f",
+	"s0diybXxcdUZVv98QUVr7Yk19ql3qcYoZf6uPhURHUsgmO//DQAA//+q8ZqkBgoAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

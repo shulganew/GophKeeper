@@ -76,7 +76,10 @@ func MidlewZip(h http.Handler) http.Handler {
 		}
 		defer func() {
 			err := gz.Close()
-			zap.S().Errorln("Can't close *gzip.Writer", err)
+			if err != nil {
+				zap.S().Errorln("Can't close *gzip.Writer", err)
+			}
+
 		}()
 
 		w.Header().Set("Content-Encoding", "gzip")

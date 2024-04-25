@@ -1,32 +1,57 @@
 package services
 
-/*
 import (
-	"context"
+	"bytes"
+	"encoding/gob"
+	"encoding/json"
+	"net/http"
 
+	"github.com/shulganew/GophKeeper/internal/entities"
+	"github.com/shulganew/GophKeeper/internal/rest/oapi"
 	"go.uber.org/zap"
 )
 
-// Work with saved site credentianls.
-type SiteService struct {
-	stor siteRepo
-}
+// Add new site credentials: site, login and password.
+func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
+	// Check registration.
+	userID, isRegistered := CheckUserAuth(r.Context())
+	if isRegistered {
+		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+		return
+	}
 
-type siteRepo interface {
-	AddSite(ctx context.Context, userID, site, slogin, spw string) error
-}
+	var site oapi.NewSite
+	if err := json.NewDecoder(r.Body).Decode(&site); err != nil {
+		// If can't decode 400
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-func NewSiteService(stor siteRepo) *SiteService {
-	return &SiteService{stor: stor}
-}
+	var data bytes.Buffer
+	encoder := gob.NewEncoder(&data)
+	err := encoder.Encode(&site)
+	if err != nil {
+		zap.S().Errorln("Error cover site to data: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-// Add new site credential: site, login and password.
-func (r *SiteService) AddSite(ctx context.Context, userID, site, slogin, spw string) (err error) {
-	err = r.stor.AddSite(ctx, userID, site, slogin, spw)
+	dbSite := entities.Secret{UserID: userID, Stype: entities.SITE, Data: data.Bytes()}
+	err = k.stor.AddSite(r.Context(), dbSite)
 	if err != nil {
 		zap.S().Errorln("Error adding site credentials: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	return
-}
 
-*/
+	w.Header().Add("Content-Type", "text/plain")
+
+	// set status code 201
+	w.WriteHeader(http.StatusCreated)
+
+	_, err = w.Write([]byte("Site credentials added."))
+	if err != nil {
+		zap.S().Errorln("Can't write to response in LoginUser handler", err)
+	}
+	zap.S().Infoln("Site credentials added. ", userID)
+}
