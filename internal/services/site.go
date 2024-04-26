@@ -87,7 +87,7 @@ func (k *Keeper) ListSite(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		site := oapi.Site{SiteID: dbSite.UUID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
+		site := oapi.Site{Definition: dbSite.Definition, SiteID: dbSite.UUID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
 		sites = append(sites, site)
 	}
 

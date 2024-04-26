@@ -29,7 +29,7 @@ func (r *Repo) AddSite(ctx context.Context, site entities.Secret) (secretID *uui
 // TODO add UNICQUE siteURL+login with error duplicated.
 func (r *Repo) GetSites(ctx context.Context, userID string, stype entities.SecretType) (sites []entities.Secret, err error) {
 	query := `
-	SELECT secret_id, description, data, key, uploaded
+	SELECT secret_id, definition, data, key, uploaded
 	FROM secrets 
 	WHERE type = $1 AND user_id = $2
 	ORDER BY uploaded DESC

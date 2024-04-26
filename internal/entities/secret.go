@@ -22,11 +22,11 @@ func (s *SecretType) String() string {
 
 // DB DTO type for storing secter data.
 type Secret struct {
-	UUID        uuid.UUID  `db:"secret_id"`
-	Description string     `db:"description"`
-	UserID      string     `db:"user_id"`
-	Stype       SecretType `db:"secret_type"`
-	Data        []byte     `db:"data"`
-	Key         time.Time  `db:"key"`
-	Uploaded    time.Time  `db:"uploaded"`
+	UUID       uuid.UUID  `db:"secret_id"`
+	Definition string     `db:"definition"`
+	UserID     string     `db:"user_id"`
+	Stype      SecretType `db:"secret_type"`
+	Data       []byte     `db:"data"`
+	Key        time.Time  `db:"key"`
+	Uploaded   time.Time  `db:"uploaded"`
 }

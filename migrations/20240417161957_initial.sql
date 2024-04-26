@@ -10,12 +10,13 @@ END$$;
 CREATE TABLE IF NOT EXISTS users (
 	user_id UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(), 
 	login TEXT NOT NULL UNIQUE, 
-	password_hash TEXT NOT NULL
+	password_hash TEXT NOT NULL,
+	email TEXT NOT NULL
 	);
 
 CREATE TABLE IF NOT EXISTS secrets (
 	secret_id UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
-	description TEXT NOT NULL DEFAULT 'Description of user data', 
+	definition TEXT NOT NULL DEFAULT 'Description of user data', 
 	user_id UUID NOT NULL REFERENCES users(user_id), 
 	type secret_type NOT NULL DEFAULT 'SITE',
 	data BYTEA NOT NULL,

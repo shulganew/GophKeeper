@@ -144,6 +144,7 @@ components:
       required:
         - login
         - password
+        - email
       properties:
         login:
           type: string
@@ -151,6 +152,9 @@ components:
         password:
           type: string
           description: User pass from registartion
+        email:
+          type: string
+          description: Users email
     Site:
       allOf:
         - $ref: '#/components/schemas/NewSite'
@@ -163,10 +167,14 @@ components:
               description: site id (credintial_id)
     NewSite:
       required:
+        - definition
         - site
         - slogin
         - spw
       properties:
+        definition:
+          type: string
+          description: Common sectert description
         site:
           type: string
           description: Site URL

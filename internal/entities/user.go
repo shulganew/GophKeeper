@@ -7,4 +7,5 @@ type User struct {
 	Login    string    `db:"login"`
 	Password string    `db:"password"`
 	PassHash string    `db:"password_hash"`
+	Email    string    `db:"email"`
 }

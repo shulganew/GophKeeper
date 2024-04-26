@@ -39,7 +39,7 @@ func (k *Keeper) CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add user to database.
-	userID, err := k.stor.AddUser(r.Context(), user.Login, hash)
+	userID, err := k.stor.AddUser(r.Context(), user.Login, hash, user.Email)
 	if err != nil {
 		var pgErr *pq.Error
 		// If URL exist in DataBase
