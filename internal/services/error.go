@@ -7,9 +7,9 @@ import (
 	"github.com/shulganew/GophKeeper/internal/rest/oapi"
 )
 
-// sendPetStoreError wraps sending of an error in the Error format, and
+// sendKeeperError wraps sending of an error in the Error format, and
 // handling the failure to marshal that.
-func sendPetStoreError(w http.ResponseWriter, code int, message string) {
+func sendKeeperError(w http.ResponseWriter, code int, message string) {
 	petErr := oapi.Error{
 		Code:    int32(code),
 		Message: message,

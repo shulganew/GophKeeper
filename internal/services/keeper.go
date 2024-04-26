@@ -16,9 +16,10 @@ type Keeper struct {
 }
 
 type Keeperer interface {
-	AddUser(ctx context.Context, login string, hash string) (*uuid.UUID, error)
-	GetByLogin(ctx context.Context, login string) (*entities.User, error)
-	AddSite(ctx context.Context, site entities.Secret) error
+	AddUser(ctx context.Context, login string, hash string) (userID *uuid.UUID, err error)
+	GetByLogin(ctx context.Context, login string) (userID *entities.User, err error)
+	AddSite(ctx context.Context, site entities.Secret) (siteID *uuid.UUID, err error)
+	GetSites(ctx context.Context, userID string, stype entities.SecretType) (site []entities.Secret, err error)
 }
 
 var _ oapi.ServerInterface = (*Keeper)(nil)
