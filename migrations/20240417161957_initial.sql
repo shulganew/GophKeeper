@@ -16,16 +16,20 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS secrets (
 	secret_id UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
-	definition TEXT NOT NULL DEFAULT 'Description of user data', 
 	user_id UUID NOT NULL REFERENCES users(user_id), 
 	type secret_type NOT NULL DEFAULT 'SITE',
 	data BYTEA NOT NULL,
-	key TIMESTAMPTZ NOT NULL,
+	ekey_version TIMESTAMPTZ NOT NULL,
+	dkey BYTEA NOT NULL,
 	uploaded TIMESTAMPTZ NOT NULL
 	);
 
--- +goose StatementEnd
+CREATE TABLE IF NOT EXISTS ekeys (
+	ts TIMESTAMPTZ NOT NULL UNIQUE,
+	ekeyc BYTEA NOT NULL UNIQUE
+	);
 
+-- +goose StatementEnd
 -- +goose Down
 -- +goose StatementBegin
 DROP TABLE users;

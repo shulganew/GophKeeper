@@ -21,6 +21,8 @@ type Config struct {
 	DSN string
 
 	PassJWT string
+
+	MasterKey string // Master password for GophKeeper storage.
 }
 
 func InitConfig() Config {
@@ -29,19 +31,23 @@ func InitConfig() Config {
 	serverAddress := flag.String("a", "localhost:8080", "Service GKeeper address")
 	dsnf := flag.String("d", "", "Data Source Name for DataBase connection")
 	authJWT := flag.String("p", "JWTsecret", "JWT private key")
+	master := flag.String("m", "MasterKey", "Master password for GophKeeper storage")
 	flag.Parse()
 
-	// Check and parse URL
+	// Check and parse URL.
 	startaddr, startport := validators.CheckURL(*serverAddress)
 
-	// Server address
+	// Server address.
 	config.Address = startaddr + ":" + startport
 
-	// read OS ENVs
+	// read OS ENVs.
 	addr, exist := os.LookupEnv(("RUN_ADDRESS"))
 
-	// JWT password for users auth
+	// JWT password for users auth.
 	config.PassJWT = *authJWT
+
+	// Master pass.
+	config.MasterKey = *master
 
 	// if env var does not exist  - set def value
 	if exist {

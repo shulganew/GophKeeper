@@ -5,6 +5,7 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/shulganew/GophKeeper/internal/entities"
 	"github.com/shulganew/GophKeeper/internal/rest/oapi"
@@ -19,7 +20,7 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
 		return
 	}
-
+	// Decode Site credentials from JSON.
 	var newSite oapi.NewSite
 	if err := json.NewDecoder(r.Body).Decode(&newSite); err != nil {
 		sendKeeperError(w, http.StatusBadRequest, "Invalid format for NewSite")
@@ -27,24 +28,46 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Write data to storage.
-	var data bytes.Buffer
-	e := gob.NewEncoder(&data)
-	err := e.Encode(&newSite)
+	var db bytes.Buffer
+	err := gob.NewEncoder(&db).Encode(&newSite)
 	if err != nil {
 		zap.S().Errorln("Error coding site to data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	dbSite := entities.Secret{UserID: userID, Stype: entities.SITE, Data: data.Bytes()}
-	//dbSite := entities.Secret{UserID: userID, Stype: entities.SITE, Data: data.Bytes(), Description: "test", Key: time.Now(), Uploaded: time.Now()}
+	data := db.Bytes()
+	// Get data key.
+	dKey, _, err := CreateDataKey()
+	if err != nil {
+		zap.S().Errorln("Error create data key: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// Encode date before store.
+	datac, err := EncodeData(dKey, data)
+	if err != nil {
+		zap.S().Errorln("Error encode data: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// Get Ephemeral current key.
+	eKey := k.GetActualEKey()
+	dKeyc, err := EncodeKey(dKey, eKey.EKey)
+	if err != nil {
+		zap.S().Errorln("Error getting ephemeral key: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	dbSite := entities.Secret{UserID: userID, Stype: entities.SITE, Data: datac, EKeyVer: eKey.TS, DKey: dKeyc, Uploaded: time.Now()}
 	siteID, err := k.stor.AddSite(r.Context(), dbSite)
 	if err != nil {
 		zap.S().Errorln("Error adding site credentials: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	// Return created site to client in responce (client add it to client's mem storage)
 	site := oapi.Site{SiteID: siteID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -78,16 +101,32 @@ func (k *Keeper) ListSite(w http.ResponseWriter, r *http.Request) {
 	// Decode secret data from storage.
 	var sites []oapi.Site
 	for _, dbSite := range dbSites {
-		data := bytes.NewReader(dbSite.Data)
+
+		// Get ephemeral key (version from ts in db) for decode data key.
+		eKey := k.GetEKey(dbSite.EKeyVer)
+		// Decode dKeyc
+		dKey, err := DecodeKey(dbSite.DKey, eKey.EKey)
+		if err != nil {
+			zap.S().Errorln("Error decode data key: ", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		// Decode data.
+		data, err := DecodeData(dKey, dbSite.Data)
+		if err != nil {
+			zap.S().Errorln("Error decode stored data: ", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
 		var newSite oapi.NewSite
-		d := gob.NewDecoder(data)
-		err := d.Decode(&newSite)
+		err = gob.NewDecoder(bytes.NewReader(data)).Decode(&newSite)
 		if err != nil {
 			zap.S().Errorln("Error decode site to data: ", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		site := oapi.Site{Definition: dbSite.Definition, SiteID: dbSite.UUID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
+
+		site := oapi.Site{Definition: newSite.Definition, SiteID: dbSite.UUID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
 		sites = append(sites, site)
 	}
 

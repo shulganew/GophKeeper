@@ -10,14 +10,18 @@ type CtxPassKey struct{}
 type AuthContext struct {
 	userID       uuid.UUID
 	isRegistered bool
+	jwt          string
 }
 
-func NewAuthContext(userID uuid.UUID, isRegistered bool) AuthContext {
-	return AuthContext{userID: userID, isRegistered: isRegistered}
+func NewAuthContext(userID uuid.UUID, jwt string, isRegistered bool) AuthContext {
+	return AuthContext{userID: userID, jwt: jwt, isRegistered: isRegistered}
 }
 
 func (c AuthContext) GetUserID() uuid.UUID {
 	return c.userID
+}
+func (c AuthContext) GetUserJWT() string {
+	return c.jwt
 }
 
 func (c AuthContext) IsRegistered() bool {

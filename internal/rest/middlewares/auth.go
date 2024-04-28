@@ -33,7 +33,7 @@ func Auth(h http.Handler) http.Handler {
 				hasJWT = false
 			}
 		}
-		ctx := context.WithValue(req.Context(), entities.AuthContext{}, entities.NewAuthContext(userID, hasJWT))
+		ctx := context.WithValue(req.Context(), entities.AuthContext{}, entities.NewAuthContext(userID, jwt, hasJWT))
 		h.ServeHTTP(res, req.WithContext(ctx))
 	})
 }

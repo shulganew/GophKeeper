@@ -41,9 +41,9 @@ func main() {
 	// Create router.
 	rt := router.RouteShear(conf, swagger)
 
-	keeper := services.NewKeeper(stor, conf)
+	keeper := services.NewKeeper(ctx, stor, conf)
 
-	// We now register our petStore above as the handler for the interface
+	// We now register our GophKeeper above as the handler for the interface
 	oapi.HandlerFromMux(keeper, rt)
 
 	// Start web server.
@@ -53,5 +53,6 @@ func main() {
 
 	// Waiting http server shuting down.
 	<-restDone
+
 	zap.S().Infoln("App done.")
 }
