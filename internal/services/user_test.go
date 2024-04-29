@@ -22,28 +22,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSite(t *testing.T) {
+func TestUser(t *testing.T) {
 	tests := []struct {
 		name       string
 		path       string
 		method     string
 		requestAdd string
-		hasJWT     bool
-		status     int
 	}{
 		{
-			name:       "Check site add and site list methods",
+			name:       "Check user registration",
 			method:     http.MethodPost,
-			requestAdd: "/api/user/site/add",
-			hasJWT:     true,
-			status:     http.StatusCreated,
-		},
-		{
-			name:       "Check user jwt",
-			method:     http.MethodPost,
-			requestAdd: "/api/user/site/add",
-			hasJWT:     false,
-			status:     http.StatusUnauthorized,
+			requestAdd: "/api/auth/register",
 		},
 	}
 
@@ -109,38 +98,22 @@ func TestSite(t *testing.T) {
 			userID, err := uuid.NewV7()
 			require.NoError(t, err)
 
-			secret_id, err := uuid.NewV7()
-			require.NoError(t, err)
-			//
-			nsite := oapi.NewSite{Definition: "mysite", Site: "www.ru", Slogin: "igor", Spw: "123"}
-			_ = repo.EXPECT().
-				AddSite(gomock.Any(), gomock.Any()).
-				AnyTimes().
-				Return(&secret_id, nil)
+			nuser := oapi.NewUser{Email: "me@ya.ru", Login: "user", Password: "123"}
 
-			jsonSite, err := json.Marshal(nsite)
+			_ = repo.EXPECT().
+				AddUser(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).
+				AnyTimes().
+				Return(&userID, nil)
+
+			jsonSite, err := json.Marshal(nuser)
 			require.NoError(t, err)
 
 			//body := strings.NewReader(jsonSite)
 			assert.NoError(t, err)
 
-			// Add jwt to header.
-			jwt := ""
-			if tt.hasJWT {
-				jwt, _ = middlewares.BuildJWTString(userID, conf.PassJWT)
-			}
 			// Create request.
-			rr := testutil.NewRequest().Post(tt.requestAdd).WithContentType("application/json").WithBody(jsonSite).WithHeader("Authorization", config.AuthPrefix+jwt).GoWithHTTPHandler(t, r).Recorder
-			assert.Equal(t, tt.status, rr.Code)
-
-			// Not check answer if jwt not existed.
-			if tt.hasJWT {
-				var resultSite oapi.Site
-				err = json.NewDecoder(rr.Body).Decode(&resultSite)
-
-				require.NoError(t, err, "error unmarshaling response")
-				t.Log("Result: ", resultSite)
-			}
+			rr := testutil.NewRequest().Post(tt.requestAdd).WithContentType("application/json").WithBody(jsonSite).GoWithHTTPHandler(t, r).Recorder
+			assert.Equal(t, http.StatusCreated, rr.Code)
 
 		})
 	}
