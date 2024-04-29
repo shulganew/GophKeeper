@@ -128,6 +128,68 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /api/user/card/add:
+    post:
+      summary: Add new debit card 
+      description: Add new card data
+      operationId: AddCard
+      parameters:
+      requestBody:
+        description: Site add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewCard'      
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Card'
+        '400':
+          description: Error decode json
+        '401':
+          description: User not authorized
+        '500':
+          description: Internal error site adding
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/user/card/list:
+    get:
+      summary: get all users card data 
+      description: list card credentials.
+      operationId: ListCards
+      responses:
+        '200':
+          description: Listed cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Card'
+        '204':
+          description: No content
+        '400':
+          description: Error decode json
+        '401':
+          description: User not authorized
+        '500':
+          description: Internal error site listing
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     User:
@@ -184,6 +246,35 @@ components:
         spw:
           type: string
           description: passwor for site
+    Card:
+      allOf:
+        - $ref: '#/components/schemas/NewCard'
+        - required:
+            - cardID
+          properties:
+            userID:
+              type: string
+              format: string
+              description: id card data
+    NewCard:
+      required:
+        - ccn
+        - exp
+        - cvv
+        - hld
+      properties:
+        ccn:
+          type: string
+          description: credit card number
+        exp:
+          type: string
+          description: expire
+        cvv:
+          type: string
+          description: card verification value
+        hld:
+          type: string
+          description: holder
     Error:
       required:
         - code

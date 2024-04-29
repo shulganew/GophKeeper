@@ -17,6 +17,24 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// Card defines model for Card.
+type Card struct {
+	// Ccn credit card number
+	Ccn string `json:"ccn"`
+
+	// Cvv card verification value
+	Cvv string `json:"cvv"`
+
+	// Exp expire
+	Exp string `json:"exp"`
+
+	// Hld holder
+	Hld string `json:"hld"`
+
+	// UserID id card data
+	UserID *string `json:"userID,omitempty"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	// Code Error code
@@ -24,6 +42,21 @@ type Error struct {
 
 	// Message Error message
 	Message string `json:"message"`
+}
+
+// NewCard defines model for NewCard.
+type NewCard struct {
+	// Ccn credit card number
+	Ccn string `json:"ccn"`
+
+	// Cvv card verification value
+	Cvv string `json:"cvv"`
+
+	// Exp expire
+	Exp string `json:"exp"`
+
+	// Hld holder
+	Hld string `json:"hld"`
 }
 
 // NewSite defines model for NewSite.
@@ -77,6 +110,9 @@ type LoginJSONRequestBody = NewUser
 // CreateUserJSONRequestBody defines body for CreateUser for application/json ContentType.
 type CreateUserJSONRequestBody = NewUser
 
+// AddCardJSONRequestBody defines body for AddCard for application/json ContentType.
+type AddCardJSONRequestBody = NewCard
+
 // AddSiteJSONRequestBody defines body for AddSite for application/json ContentType.
 type AddSiteJSONRequestBody = NewSite
 
@@ -88,6 +124,12 @@ type ServerInterface interface {
 	// User registration
 	// (POST /api/auth/register)
 	CreateUser(w http.ResponseWriter, r *http.Request)
+	// Add new debit card
+	// (POST /api/user/card/add)
+	AddCard(w http.ResponseWriter, r *http.Request)
+	// get all users card data
+	// (GET /api/user/card/list)
+	ListCards(w http.ResponseWriter, r *http.Request)
 	// Add new site
 	// (POST /api/user/site/add)
 	AddSite(w http.ResponseWriter, r *http.Request)
@@ -109,6 +151,18 @@ func (_ Unimplemented) Login(w http.ResponseWriter, r *http.Request) {
 // User registration
 // (POST /api/auth/register)
 func (_ Unimplemented) CreateUser(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Add new debit card
+// (POST /api/user/card/add)
+func (_ Unimplemented) AddCard(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get all users card data
+// (GET /api/user/card/list)
+func (_ Unimplemented) ListCards(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -154,6 +208,36 @@ func (siw *ServerInterfaceWrapper) CreateUser(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateUser(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// AddCard operation middleware
+func (siw *ServerInterfaceWrapper) AddCard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddCard(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ListCards operation middleware
+func (siw *ServerInterfaceWrapper) ListCards(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListCards(w, r)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -313,6 +397,12 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Post(options.BaseURL+"/api/auth/register", wrapper.CreateUser)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/user/card/add", wrapper.AddCard)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/api/user/card/list", wrapper.ListCards)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/user/site/add", wrapper.AddSite)
 	})
 	r.Group(func(r chi.Router) {
@@ -325,24 +415,27 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/8yWX2/bNhDAvwrBDWgHqJaTZg/z07I06IwF6bAs2EMRDIR4lrhKpHp3qpsF/u7DkbKr",
-	"RHId7F/zFIe8//fjne50EZo2ePBMenGnqaigMfHnOWJA+dFiaAHZQTwuggX5a4EKdC274PUiCat4l+lV",
-	"wMawXmjn+eWxzjTftpD+hRJQbzLdAJEp9xraXu9UidH5Um82mUZ43zkEqxdvde9wK36zyfQlrK8cwzhw",
-	"CyvnXXLz0OtZaJrgFUHBgKyGl6MQMk29/fs2xKu6/uViUqMOpZvwG4/VKqCKNqc02/VYrTVE64CfUXxQ",
-	"p0Huffi7mJKLvnLXBBMth8a4ehyFCJNKlxOR70lZtFSfN4ZGIZSOGM2+Yve52j2W5HpoyOC0oQcF2ea+",
-	"s571WUohtvyYun6z0ou3d/prhJVe6K/yT68l759KvgVukz2smxR6+WocuJwrZ9XzAsE6z87Uvzv7zfDl",
-	"9GEfSqP3cLO52ciV86uQ3qhnU/Cgd9q0jsE039PalCXgzAWdaW8aMX6VztTpz0v1K5hGZ7pDUaqYW1rk",
-	"+UBpkz1I5nVoq58AWkDlSBmC9x06vlXbyioC/OAKUM/lR+wYsuRauwI8xUL3cZy2pqhAHc/mowjW6/XM",
-	"xOtZwDLvdSm/WJ6dX16dvziezWcVN7XEx4ANvVldJb+TaeRRJpf6Oq5FZlkGfEbqdXgXc9GZ/gBIKcWj",
-	"2Xw2F8uhBW9apxf6ZTwSfriKvc5N63LTcZXvuG8D8bj5Pxpva0DVmHeg4KMjdr5UnbAs6up51JcCCUrx",
-	"WSytXuiLnlhpPxD/EOztttXgox/TtrUrokb+B6UxlyCVXwcQji8/QnQ/3OhWXcJaRYkhfowdRB6pDdIM",
-	"8XI8n09Mxq4ogGjV1enhSylPpgTT8LcgY13FFKLk0VjyNwy+7MdIwB1sCc+V6Wr+14qT9uBEaToPH1vZ",
-	"GFZBL5Np6prG4O29QRcvPgGSBlU/aA8z4mGd8MDhnLwPxxmCYRh06H8kJOZprFUcFFegiAPCI0A52jPR",
-	"i5iLPQBJlJKXUxmq0gIYQnAy/26smVh2JOWMUt9O2T8z/hmrElhdXy9fCV2x+uLnyeF1b3nuKJN4c1kN",
-	"ubF2P2Wn1ka44jqSVQRxFZFSL+JZ1r8v4+2utrMReqfWXqUPiv+Iu7Rcx/WJ31t/l7tHB+cYGjoUZb//",
-	"t8vaIJrbvU/lcXw/ZghGcz5wXBwB3Z+foXrpGdCbOrGUem6s7T+yngrUQySneK5dArmECZ7l8h/CfOGI",
-	"pZmkp/fal8FGogIb0yCRP56fjLO/DGob3Zcnq06fNU8JLRnopq7jMKdUS2UNGzG1+SsAAP///lUM2QcP",
-	"AAA=",
+	"H4sIAAAAAAAC/+xXX2/bNhD/KgQ3oB2gWm7aPcxPy5KgMxakw7JgD0UxsOJZ4iqR6pGykwX+7sMdJUeO",
+	"5Nro0jYPfbJM3n/++LvjrcxcVTsLNng5u5U+K6BS/HmiUNOvKsvXCzl7cyu/R1jImfwuvdNJW4X0Alas",
+	"sE5uZY2uBgwG2E7jAeen9KXBZ2jqYJyVM2m0yBRqoVVQMpELh5UKciZ9QGNzmchwU8Pd//U6kQgfGoOg",
+	"5eyNJN35qXy7frtO5BmiQ3Kx7TpzGoaOWVjwXs+tseHF0Z1XYwPkgHKdyAq8V/lOQ9323oCjw06cwu6K",
+	"Ngw8s0N3GYI2IRbNNtU7wKHPRGbL5Ygq6SwBzcJkitbEUpUNjOnDdT3Uh+va4Kh4UeqheOFKPRbd/Ypk",
+	"VkaHMexorS3MpQkwLIyGhbEmurnv9cRVlbPCQxYAg+hvjgTuW/vbNsiruPrjfFSjdLkZ8cvLYuFQsM0x",
+	"zXo1VKuV9yuHH1G8V65e7m34m5iii7ZyVx5G7gJUypTDKEjYi7g5EvmOlElLtHmjqwRCbnxAtavYba56",
+	"hyXa7htSOG7oXkG63DfWkzZLKkSHn4PpixWG9EWFHqMvWhdGi6d8LW0wqvzb6B8+gclaD8RktGXswkXy",
+	"skFloXd2UtUmgKp+9iuV54AT42QirarI+GVcE8e/z8WfoCqZyAZJqQih9rM07Smtk3vJvHJ18RtADSiM",
+	"F8rDhwZNuBFdZYUHXJoMxFP64BPDQLmWJgPrudBtHMe1ygoQR5PpIILVajVRvD1xmKetrk/P5ydnF5dn",
+	"z44m00kRqpLiC4CVf724jH5H00hZJqX6mlCSzDx3+MSLV+495yITuQT0McXnk+lkSpZdDVbVRs7kC14i",
+	"/ISCzzpVtUlVE4p0g/va+TA8/F+V1SWgqNR7EHBtfDA2F9TpBKmLp6xPBSIo8bWYazmT5y1i6fjBh1+c",
+	"vumOGiz7UXVdthyd/uMjzUWQ0tceCPPNZxBth8tuxQWsBEv04RewAcajrx0dBnk5mk5HmLHJMvB+0ZTx",
+	"4lMpX44Jxq6ogfqd4BRY8vlQ8i90Nm9pxOEGbBGeC9WU4cGKEweEkdI0Fq5r6hhaQCuTSN9UlcKbLaLj",
+	"jTuARKJqiXY/RiysIjywz5Pb4DhBUAF6J/QFEcJ5Kq1FcCIUIHxw3O/3AeX5DkbPOBe9ByQsRTenUL6I",
+	"DaAPgpfTn4aaEcvGUzlZ6scx+yfKPgkihyCuruanhC6uPvl5dPDaap4blFG8Kc1tqdJ6N8qOtWZw9Ufp",
+	"bVgda81D5mfDVJz7h7nzLPWpmDo4OBOg8vuibJ8mXSNWiOpm5zU4DLuHEBybsy5wU3Bo/v0IYuc2AFpV",
+	"RpzwREjFaweoxwLYDm4a3rVPkTHEliZCNYcRxNJmhCtNTsCTk58MW6XxgY7Ny/Hu9HUAQlFBfLh6kj+a",
+	"vhxmeOFEF93Xx1AZh5PHBCKiZVWWTMm+x1zbSKLoD+M+zrMHJiGe8VrSzhbK6k1fmYzx42V8TH0mfowP",
+	"i0fNj+3b5xs/PhQ/+njmAzzvZ8b/B2biJzrML8Oah8KmZU3PgX1jzYdgTa5lR5vr9X8BAAD//1XaNB3I",
+	"FQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

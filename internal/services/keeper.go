@@ -30,6 +30,7 @@ type Keeperer interface {
 	AddUser(ctx context.Context, login, hash, email string) (userID *uuid.UUID, err error)
 	GetByLogin(ctx context.Context, login string) (userID *entities.User, err error)
 
+	// Site credentials methods
 	AddSite(ctx context.Context, site entities.NewSecretEncoded) (siteID *uuid.UUID, err error)
 	GetSites(ctx context.Context, userID string, stype entities.SecretType) (site []entities.SecretEncoded, err error)
 
