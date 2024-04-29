@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/entities"
-	"github.com/shulganew/GophKeeper/internal/rest/oapi"
 	"go.uber.org/zap"
 )
 
@@ -25,7 +25,6 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 		sendKeeperError(w, http.StatusBadRequest, "Invalid format for NewSite")
 		return
 	}
-
 	// Write data to storage.
 	var db bytes.Buffer
 	err := gob.NewEncoder(&db).Encode(&newSite)
@@ -42,7 +41,7 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Return created site to client in responce (client add it to client's mem storage)
-	site := oapi.Site{SiteID: secretID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
+	site := oapi.Site{SiteID: secretID.String(), Definition: newSite.Definition, Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
 	w.Header().Add("Content-Type", "application/json")
 
 	// set status code 201

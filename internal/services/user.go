@@ -6,16 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
-	"time"
 
-	"github.com/gofrs/uuid"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
+	"github.com/shulganew/GophKeeper/internal/api/middlewares"
+	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/app/config"
 	"github.com/shulganew/GophKeeper/internal/entities"
-	"github.com/shulganew/GophKeeper/internal/rest/oapi"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -52,7 +49,7 @@ func (k *Keeper) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwt, _ := BuildJWTString(*userID, k.conf.PassJWT)
+	jwt, _ := middlewares.BuildJWTString(*userID, k.conf.PassJWT)
 	w.Header().Add("Content-Type", "text/plain")
 	w.Header().Add("Authorization", config.AuthPrefix+jwt)
 
@@ -91,7 +88,7 @@ func (k *Keeper) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	zap.S().Debug("Login sucsess, user id is: ", dbUser.UUID)
-	jwt, _ := BuildJWTString(dbUser.UUID, k.conf.PassJWT)
+	jwt, _ := middlewares.BuildJWTString(dbUser.UUID, k.conf.PassJWT)
 
 	w.Header().Add("Content-Type", "text/plain")
 	w.Header().Add("Authorization", config.AuthPrefix+jwt)
@@ -117,53 +114,6 @@ func (k Keeper) HashPassword(password string) (string, error) {
 // CheckPassword checks if the provided password is correct or not.
 func (k Keeper) CheckPassword(password string, hashedPassword string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-}
-
-// Create JWT token.
-func BuildJWTString(userID uuid.UUID, pass string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, entities.JWT{
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(config.TokenExp)),
-		},
-		UserID: userID,
-	})
-
-	tokenString, err := token.SignedString([]byte(pass))
-	if err != nil {
-		return "", err
-	}
-
-	return tokenString, nil
-}
-
-// Retrive user's UUID from JWT string.
-func GetUserIDJWT(tokenString string, pass string) (userID uuid.UUID, err error) {
-	claims := &entities.JWT{}
-	_, err = jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
-		return []byte(pass), nil
-	})
-
-	return claims.UserID, err
-}
-
-// Create jwt token from string.
-func GetJWT(tokenString string, pass string) (token *jwt.Token, err error) {
-	claims := &entities.JWT{}
-	token, err = jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
-		return []byte(pass), nil
-	})
-
-	return token, err
-}
-
-// Check JWT is Set to Headek.
-func GetHeaderJWT(header http.Header) (jwt string, isSet bool) {
-	authHeader := header.Get("Authorization")
-	if strings.HasPrefix(authHeader, config.AuthPrefix) {
-		return authHeader[len(config.AuthPrefix):], true
-	}
-	return "", false
-
 }
 
 // Check if contex has JWT valid user token from auth middleware.

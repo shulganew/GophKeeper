@@ -1,22 +1,23 @@
 package main
 
 import (
+	"github.com/shulganew/GophKeeper/internal/api/oapi"
+	"github.com/shulganew/GophKeeper/internal/api/router"
 	"github.com/shulganew/GophKeeper/internal/app"
 	"github.com/shulganew/GophKeeper/internal/app/config"
-	"github.com/shulganew/GophKeeper/internal/rest/oapi"
-	"github.com/shulganew/GophKeeper/internal/rest/router"
 	"github.com/shulganew/GophKeeper/internal/services"
 	"go.uber.org/zap"
 )
 
 func main() {
-	zap.S().Infoln("Starting GophKeeper...")
-
+	
 	// Get application config.
 	conf := config.InitConfig()
 
 	// Init application logging.
 	app.InitLog()
+
+	zap.S().Infoln("Starting GophKeeper...")
 
 	// Root app context.
 	ctx, cancel := app.InitContext()
@@ -47,7 +48,7 @@ func main() {
 	oapi.HandlerFromMux(keeper, rt)
 
 	// Start web server.
-	restDone := app.StartREST(ctx, &conf, componentsErrs, rt)
+	restDone := app.StartAPI(ctx, &conf, componentsErrs, rt)
 	//Graceful shutdown.
 	app.Graceful(ctx, cancel, componentsErrs)
 

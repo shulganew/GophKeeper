@@ -2,7 +2,7 @@
 .PHONY: oapi
 
 oapi: 
-	go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=internal/rest/oapi/cfg.yaml --package oapi internal/rest/oapi/keeper.yaml
+	go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=internal/api/oapi/cfg.yaml --package oapi internal/api/oapi/keeper.yaml
 
 #Migrations
 

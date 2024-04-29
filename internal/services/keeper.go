@@ -14,9 +14,9 @@ import (
 	"context"
 
 	"github.com/gofrs/uuid"
+	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/app/config"
 	"github.com/shulganew/GophKeeper/internal/entities"
-	"github.com/shulganew/GophKeeper/internal/rest/oapi"
 )
 
 // User creation, registration, validation and autentification service.

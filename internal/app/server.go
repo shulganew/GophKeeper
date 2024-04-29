@@ -16,7 +16,7 @@ const timeoutServerShutdown = time.Second * 5
 const timeoutShutdown = time.Second * 20
 
 // Manage web server.
-func StartREST(ctx context.Context, conf *config.Config, componentsErrs chan error, r *chi.Mux) (restDone chan struct{}) {
+func StartAPI(ctx context.Context, conf *config.Config, componentsErrs chan error, r *chi.Mux) (restDone chan struct{}) {
 	// Start web server.
 	var srv = http.Server{Addr: conf.Address, Handler: r}
 	go func() {

@@ -5,4 +5,4 @@ generate:
   embedded-spec: true
 compatibility:
   apply-chi-middleware-first-to-last: true
-output: internal/rest/oapi/gokeeper.gen.go
+output: internal/api/oapi/gokeeper.gen.go

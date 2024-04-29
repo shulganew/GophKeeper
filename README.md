@@ -1,6 +1,23 @@
 # GophKeeper
 Password keeper - server (Yandex praktikum final project)
 
+## Mock generate 
+
+```bash
+go install github.com/golang/mock/mockgen@v1.6.0
+go get github.com/golang/mock/gomock
+
+```
+
+```bash
+mockgen -source=internal/services/keeper.go \
+    -destination=internal/services/mocks/keeper.gen.go \
+    -package=mocks
+
+
+```
+
+
 ## Generate oapi
 Use make or bash command or //TODO build generate
 ```
@@ -12,8 +29,8 @@ go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=internal/res
 /home/igor/Desktop/code/GophKeeper/internal/rest/oapi/keeper.yaml
 ## Mock
 ```bash
-mockgen -source=internal/services/user.go \
-    -destination=internal/services/mocks/user.gen.go \
+mockgen -source=internal/services/keeper.go \
+    -destination=internal/services/mocks/keeper.gen.go \
     -package=mocks
 ```
 

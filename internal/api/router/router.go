@@ -7,9 +7,9 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
 	middleware "github.com/oapi-codegen/nethttp-middleware"
+	"github.com/shulganew/GophKeeper/internal/api/middlewares"
 	"github.com/shulganew/GophKeeper/internal/app/config"
 	"github.com/shulganew/GophKeeper/internal/entities"
-	"github.com/shulganew/GophKeeper/internal/rest/middlewares"
 )
 
 // Chi Router for application.
