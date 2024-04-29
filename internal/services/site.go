@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/shulganew/GophKeeper/internal/entities"
 	"github.com/shulganew/GophKeeper/internal/rest/oapi"
@@ -36,40 +35,14 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := db.Bytes()
-	// Get data key.
-	dKey, _, err := CreateDataKey()
+	secretID, err := k.AddSecret(r.Context(), userID, entities.SITE, db.Bytes())
 	if err != nil {
-		zap.S().Errorln("Error create data key: ", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	// Encode date before store.
-	datac, err := EncodeData(dKey, data)
-	if err != nil {
-		zap.S().Errorln("Error encode data: ", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	// Get Ephemeral current key.
-	eKey := k.GetActualEKey()
-	dKeyc, err := EncodeKey(dKey, eKey.EKey)
-	if err != nil {
-		zap.S().Errorln("Error getting ephemeral key: ", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	dbSite := entities.Secret{UserID: userID, Stype: entities.SITE, Data: datac, EKeyVer: eKey.TS, DKey: dKeyc, Uploaded: time.Now()}
-	siteID, err := k.stor.AddSite(r.Context(), dbSite)
-	if err != nil {
-		zap.S().Errorln("Error adding site credentials: ", err)
+		zap.S().Errorln("Error adding site to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	// Return created site to client in responce (client add it to client's mem storage)
-	site := oapi.Site{SiteID: siteID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
-
+	site := oapi.Site{SiteID: secretID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
 	w.Header().Add("Content-Type", "application/json")
 
 	// set status code 201
@@ -78,11 +51,11 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.S().Errorln("Can't write to response in AddSite handler", err)
 	}
-	zap.S().Infoln("Site credentials added. ", userID)
+	zap.S().Debugln("Site credentials added. ", site.SiteID, " ", site.Site)
 }
 
 // List all users sites with credentials.
-func (k *Keeper) ListSite(w http.ResponseWriter, r *http.Request) {
+func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
 	// Check registration.
 	userID, isRegistered := CheckUserAuth(r.Context())
 	if !isRegistered {
@@ -91,42 +64,24 @@ func (k *Keeper) ListSite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load all user's sites credentials from database.
-	dbSites, err := k.stor.GetSites(r.Context(), userID, entities.SITE)
+	secretDecoded, err := k.GetSecrets(r.Context(), userID, entities.SITE)
 	if err != nil {
 		zap.S().Errorln("Error getting site credentials: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Decode secret data from storage.
+	// Load decoded data and decode binary data to oapi.Site.
 	var sites []oapi.Site
-	for _, dbSite := range dbSites {
-
-		// Get ephemeral key (version from ts in db) for decode data key.
-		eKey := k.GetEKey(dbSite.EKeyVer)
-		// Decode dKeyc
-		dKey, err := DecodeKey(dbSite.DKey, eKey.EKey)
-		if err != nil {
-			zap.S().Errorln("Error decode data key: ", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		// Decode data.
-		data, err := DecodeData(dKey, dbSite.Data)
-		if err != nil {
-			zap.S().Errorln("Error decode stored data: ", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-
+	for _, secret := range secretDecoded {
 		var newSite oapi.NewSite
-		err = gob.NewDecoder(bytes.NewReader(data)).Decode(&newSite)
+		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&newSite)
 		if err != nil {
 			zap.S().Errorln("Error decode site to data: ", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		site := oapi.Site{Definition: newSite.Definition, SiteID: dbSite.UUID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
+		site := oapi.Site{Definition: newSite.Definition, SiteID: secret.UUID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
 		sites = append(sites, site)
 	}
 
@@ -142,5 +97,4 @@ func (k *Keeper) ListSite(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.S().Errorln("Can't write to response in ListSite handler", err)
 	}
-	zap.S().Infoln("Site credentials added. ", userID)
 }

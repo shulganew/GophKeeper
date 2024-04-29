@@ -9,6 +9,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/gofrs/uuid"
 	"github.com/shulganew/GophKeeper/internal/entities"
 	"go.uber.org/zap"
 )
@@ -175,5 +176,68 @@ func getCryptData(key []byte) (nonce []byte, aesgcm cipher.AEAD, err error) {
 	length := aesgcm.NonceSize()
 	nonceSize := len(hkey) - length
 	nonce = hkey[nonceSize:]
+	return
+}
+
+// Common method for all data types to store cypted data in DB.
+func (k *Keeper) AddSecret(ctx context.Context, userID string, dataType entities.SecretType, data []byte) (secretID *uuid.UUID, err error) {
+	// Get data key.
+	dKey, _, err := CreateDataKey()
+	if err != nil {
+		zap.S().Errorln("Error create data key: ", err)
+		return nil, err
+	}
+	// Encode date before store.
+	datac, err := EncodeData(dKey, data)
+	if err != nil {
+		zap.S().Errorln("Error encode data: ", err)
+		return nil, err
+	}
+	// Get Ephemeral current key.
+	eKey := k.GetActualEKey()
+	dKeyc, err := EncodeKey(dKey, eKey.EKey)
+	if err != nil {
+		zap.S().Errorln("Error getting ephemeral key: ", err)
+		return nil, err
+	}
+
+	dbSite := entities.NewSecretEncoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: eKey.TS, DKey: dKeyc, Uploaded: time.Now()}, DataCr: datac}
+
+	secretID, err = k.stor.AddSite(ctx, dbSite)
+	if err != nil {
+		zap.S().Errorln("Error adding site credentials: ", err)
+		return nil, err
+	}
+	return
+}
+
+func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entities.SecretType) (secrets []entities.SecretDecoded, err error) {
+	// Load all user's sites coded credentials from database.
+	secretsc, err := k.stor.GetSites(ctx, userID, dataType)
+	if err != nil {
+		zap.S().Errorln("Error getting site credentials: ", err)
+		return nil, err
+	}
+
+	for _, secret := range secretsc {
+		// Get ephemeral key (version from ts in db) for decode data key.
+		eKey := k.GetEKey(secret.EKeyVer)
+		// Decode dKeyc
+		dKey, err := DecodeKey(secret.DKey, eKey.EKey)
+		if err != nil {
+			zap.S().Errorln("Error decode data key: ", err)
+			return nil, err
+		}
+		// Decode data.
+		data, err := DecodeData(dKey, secret.DataCr)
+		if err != nil {
+			zap.S().Errorln("Error decode stored data: ", err)
+			return nil, err
+		}
+
+		secretDecoded := entities.SecretDecoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: secret.EKeyVer, Uploaded: secret.Uploaded}, UUID: secret.UUID, Data: data}
+		//Definition: newSite.Definition, SiteID: dbSite.UUID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
+		secrets = append(secrets, secretDecoded)
+	}
 	return
 }

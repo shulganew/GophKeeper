@@ -21,12 +21,34 @@ func (s *SecretType) String() string {
 }
 
 // DB DTO type for storing secter data.
-type Secret struct {
-	UUID     uuid.UUID  `db:"secret_id"`
+// OAPI pattern - new mean struct without id (new constructor),
+// id will be retruned by DB
+type NewSecret struct {
 	UserID   string     `db:"user_id"`
-	Stype    SecretType `db:"type"`
-	Data     []byte     `db:"data"`
+	Type     SecretType `db:"type"` // Type of data - Site data, Credit card, Text or file.
 	EKeyVer  time.Time  `db:"ekey_version"`
 	DKey     []byte     `db:"dkey"`
 	Uploaded time.Time  `db:"uploaded"`
+}
+type SecretDecoded struct {
+	NewSecret
+	UUID uuid.UUID
+	Data []byte
+}
+
+type SecretEncoded struct {
+	NewSecret
+	UUID   uuid.UUID `db:"secret_id"` // Stored secretID.
+	DataCr []byte    `db:"data"`      // Decrypted data.
+}
+
+type NewSecretDecoded struct {
+	NewSecret
+	Data []byte // Stored decod data.
+}
+
+// Data in struct with crypted data.
+type NewSecretEncoded struct {
+	NewSecret
+	DataCr []byte `db:"data"` // Stored crypted data - data crypted.
 }

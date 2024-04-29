@@ -104,7 +104,7 @@ paths:
     get:
       summary: get all users sites data 
       description: list site credentials  - site, login and password.
-      operationId: ListSite
+      operationId: ListSites
       responses:
         '200':
           description: Listed sites
