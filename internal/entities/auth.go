@@ -1,0 +1,29 @@
+package entities
+
+import "github.com/gofrs/uuid"
+
+// Send pass to midleware.
+type CtxPassKey struct{}
+
+// Send values through middleware in context.
+// TODO - move to middlewares, solve cycle import problem
+type AuthContext struct {
+	userID       uuid.UUID
+	isRegistered bool
+	jwt          string
+}
+
+func NewAuthContext(userID uuid.UUID, jwt string, isRegistered bool) AuthContext {
+	return AuthContext{userID: userID, jwt: jwt, isRegistered: isRegistered}
+}
+
+func (c AuthContext) GetUserID() uuid.UUID {
+	return c.userID
+}
+func (c AuthContext) GetUserJWT() string {
+	return c.jwt
+}
+
+func (c AuthContext) IsRegistered() bool {
+	return c.isRegistered
+}

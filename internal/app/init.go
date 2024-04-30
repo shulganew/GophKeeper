@@ -39,7 +39,7 @@ func InitContext() (ctx context.Context, cancel context.CancelFunc) {
 	return
 }
 
-func InitApp(ctx context.Context, conf config.Config) (application *UseCases, err error) {
+func InitStore(ctx context.Context, conf config.Config) (stor *storage.Repo, err error) {
 
 	// Connection for Keeper Database.
 	db, err := sqlx.Connect(config.DataBaseType, conf.DSN)
@@ -48,14 +48,11 @@ func InitApp(ctx context.Context, conf config.Config) (application *UseCases, er
 	}
 
 	// Load storage.
-	stor, err := storage.NewRepo(ctx, db)
+	stor, err = storage.NewRepo(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create config Container
-	application = NewUseCases(conf, stor)
-
 	zap.S().Infoln("Application init complite")
-	return application, nil
+	return stor, nil
 }

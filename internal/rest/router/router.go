@@ -4,41 +4,30 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
-	"github.com/shulganew/GophKeeper/internal/app"
+	middleware "github.com/oapi-codegen/nethttp-middleware"
 	"github.com/shulganew/GophKeeper/internal/app/config"
-	"github.com/shulganew/GophKeeper/internal/rest/handler"
+	"github.com/shulganew/GophKeeper/internal/entities"
 	"github.com/shulganew/GophKeeper/internal/rest/middlewares"
 )
 
 // Chi Router for application.
-func RouteShear(conf config.Config, application *app.UseCases) (r *chi.Mux) {
+func RouteShear(conf config.Config, swagger *openapi3.T) (r *chi.Mux) {
 	r = chi.NewRouter()
+	// Use our validation middleware to check all requests against the
+	// OpenAPI schema.
+
 	// Send password for enctription to middlewares.
 	r.Use(func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), middlewares.CtxPassKey{}, conf.PassJWT)
+			ctx := context.WithValue(r.Context(), entities.CtxPassKey{}, conf.PassJWT)
 			h.ServeHTTP(w, r.WithContext(ctx))
 		})
 	})
+	r.Use(middlewares.MidlewZip)
+	r.Use(middlewares.Auth)
+	r.Use(middleware.OapiRequestValidator(swagger))
 
-	r.Route("/", func(r chi.Router) {
-		// User registration.
-		r.Route("/api/user/auth", func(r chi.Router) {
-			userReg := handler.NewHandlerRegister(conf, application.UserService())
-			r.Post("/register", http.HandlerFunc(userReg.AddUser))
-			userLogin := handler.NewHandlerLogin(conf, application.UserService())
-			r.Post("/login", http.HandlerFunc(userLogin.LoginUser))
-
-		})
-		// Add auth/
-
-		r.Route("/api/user/site", func(r chi.Router) {
-			r.Use(middlewares.Auth)
-			siteAdd := handler.NewSiteAdd(conf, application.SiteService())
-			r.Post("/add", http.HandlerFunc(siteAdd.SiteAdd))
-		})
-
-	})
 	return
 }

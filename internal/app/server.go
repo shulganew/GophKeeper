@@ -20,7 +20,6 @@ func StartREST(ctx context.Context, conf *config.Config, componentsErrs chan err
 	// Start web server.
 	var srv = http.Server{Addr: conf.Address, Handler: r}
 	go func() {
-
 		if err := srv.ListenAndServe(); err != nil {
 			if errors.Is(err, http.ErrServerClosed) {
 				return
