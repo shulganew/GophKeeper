@@ -1,6 +1,12 @@
 # GophKeeper
 Password keeper - server (Yandex praktikum final project)
 
+## minIO
+install
+https://min.io/docs/minio/container/index.html
+habr example
+https://habr.com/ru/companies/ozontech/articles/586024/?code=9040949a58b797539b7c7d5b3a3462e2&state=Zfbrcwb5DSFDKXKFDgu6bkBC&hl=ru
+
 ## Create certificates
 
 Generate private key:

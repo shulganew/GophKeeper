@@ -1,9 +1,35 @@
-## oapi generate files
+# MinIO
+.PHONY: minio
+
+minio: 
+	docker run --rm \
+		-d \
+   		-p 9000:9000 \
+   		-p 9001:9001 \
+   		--name minio_v1 \
+   		-v ~/minio/data:/data \
+   		-e "MINIO_ROOT_USER=admin" \
+   		-e "MINIO_ROOT_PASSWORD=12345678" \
+   		quay.io/minio/minio server /data --console-address ":9001"
+
+.PHONY: minio-init
+minio-init: 
+	go install github.com/minio/mc@latest
+	mc alias set minio http://localhost:9000 admin 12345678
+	mc mb minio/gohpkeeper
+	mc ls minio > [0B] gohpkeeper
+
+
+.PHONY: minio-stop
+minio-stop:
+	docker stop minio_v1
+
+# oapi generate files
 .PHONY: oapi
 
 oapi: 
-	go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=internal/api/oapi/cfg.yaml --package oapi internal/api/oapi/keeper.yaml
-
+	go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=internal/app/config/oapi.yaml --package oapi api/keeper.yaml
+	
 #Migrations
 
 .PHONY: pg
