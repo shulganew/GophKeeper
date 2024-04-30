@@ -28,7 +28,7 @@ type Config struct {
 func InitConfig() Config {
 	config := Config{}
 	// read command line argue
-	serverAddress := flag.String("a", "localhost:8080", "Service GKeeper address")
+	serverAddress := flag.String("a", "localhost:8443", "Service GKeeper address")
 	dsnf := flag.String("d", "", "Data Source Name for DataBase connection")
 	authJWT := flag.String("p", "JWTsecret", "JWT private key")
 	master := flag.String("m", "MasterKey", "Master password for GophKeeper storage")

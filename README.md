@@ -1,6 +1,24 @@
 # GophKeeper
 Password keeper - server (Yandex praktikum final project)
 
+## Create certificates
+
+Generate private key:
+```
+openssl genrsa -out pkey.pem 2048
+```
+Generate CSR: (In the "Common Name" set the domain of your service provider app)
+```
+openssl req -new -key pkey.pem -out server.csr
+```
+
+Generate Self Signed Cert
+```
+openssl x509 -req -days 365 -in server.csr -signkey pkey.pem -out pkey.crt
+rm pkey.pem
+```
+
+
 ## Mock generate 
 
 ```bash
