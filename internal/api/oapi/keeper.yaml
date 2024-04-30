@@ -78,7 +78,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewSite'      
+              $ref: '#/components/schemas/NewSite'
       responses:
         '201':
           description: User created
@@ -135,15 +135,15 @@ paths:
       operationId: AddCard
       parameters:
       requestBody:
-        description: Site add to the store
+        description: Card add to the store
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/NewCard'      
+              $ref: '#/components/schemas/NewCard'
       responses:
         '201':
-          description: User created
+          description: Card created
           content:
             application/json:
               schema:
@@ -153,9 +153,9 @@ paths:
         '400':
           description: Error decode json
         '401':
-          description: User not authorized
+          description: Card not authorized
         '500':
-          description: Internal error site adding
+          description: Internal error Card adding
         default:
           description: unexpected error
           content:
@@ -176,6 +176,54 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Card'
+  /api/user/gtext/add:
+    post:
+      summary: Add new text note
+      description: Add new text note
+      operationId: AddGtext
+      parameters:
+      requestBody:
+        description: Note add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewGtext'
+      responses:
+        '201':
+          description: Gtext created
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Gtext'
+        '400':
+          description: Error decode json
+        '401':
+          description: Gtext not authorized
+        '500':
+          description: Internal error Card adding
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/user/gtext/list:
+    get:
+      summary: get all users notes data 
+      description: list notes.
+      operationId: ListGtexts
+      responses:
+        '200':
+          description: Listed notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Gtext'
         '204':
           description: No content
         '400':
@@ -252,17 +300,21 @@ components:
         - required:
             - cardID
           properties:
-            userID:
+            cardID:
               type: string
               format: string
               description: id card data
     NewCard:
       required:
+        - definition
         - ccn
         - exp
         - cvv
         - hld
       properties:
+        definition:
+          type: string
+          description: Common sectert description
         ccn:
           type: string
           description: credit card number
@@ -275,6 +327,27 @@ components:
         hld:
           type: string
           description: holder
+    Gtext:
+      allOf:
+        - $ref: '#/components/schemas/NewGtext'
+        - required:
+            - gtextID
+          properties:
+            gtextID:
+              type: string
+              format: string
+              description: id card data
+    NewGtext:
+      required:
+        - definition
+        - note
+      properties:
+        definition:
+          type: string
+          description: Common sectert header
+        note:
+          type: string
+          description: main text data
     Error:
       required:
         - code

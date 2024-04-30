@@ -64,3 +64,7 @@ migrations up in make file during database startup
 ```bash
 make pg-stop
 ```
+
+## Git - remove file with git ignore, when it already added.
+git rm --cached internal/api/oapi/gokeeper.gen.go
+git reset internal/api/oapi/gokeeper.gen.go
