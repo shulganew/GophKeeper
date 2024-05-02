@@ -12,18 +12,28 @@ package services
 
 import (
 	"context"
+	"io"
 
 	"github.com/gofrs/uuid"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/app/config"
 	"github.com/shulganew/GophKeeper/internal/entities"
+	"github.com/shulganew/GophKeeper/internal/storage/s3"
 )
 
 // User creation, registration, validation and autentification service.
 type Keeper struct {
 	stor  Keeperer
+	fstor FileKeeper
 	conf  config.Config
 	eKeys []entities.EKeyMem // Decoded ephemeral keys.
+}
+
+func NewKeeper(ctx context.Context, stor Keeperer, fstor FileKeeper, conf config.Config) *Keeper {
+	keeper := &Keeper{stor: stor, fstor: fstor, conf: conf, eKeys: []entities.EKeyMem{}}
+	// Load eKeys.
+	keeper.LoadKeyRing(ctx)
+	return keeper
 }
 
 type Keeperer interface {
@@ -41,11 +51,10 @@ type Keeperer interface {
 	LoadEKeysc(ctx context.Context) (eKeysc []entities.EKeyDB, err error)
 }
 
-var _ oapi.ServerInterface = (*Keeper)(nil)
-
-func NewKeeper(ctx context.Context, stor Keeperer, conf config.Config) *Keeper {
-	keeper := &Keeper{stor: stor, conf: conf, eKeys: []entities.EKeyMem{}}
-	// Load eKeys.
-	keeper.LoadKeyRing(ctx)
-	return keeper
+type FileKeeper interface {
+	UploadFile(ctx context.Context, fileID string, fr io.ReadCloser) (err error)
 }
+
+// Check interfaces.
+var _ oapi.ServerInterface = (*Keeper)(nil)
+var _ FileKeeper = (*s3.FileRepo)(nil)

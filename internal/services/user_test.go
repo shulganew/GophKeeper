@@ -65,7 +65,7 @@ func TestUser(t *testing.T) {
 		AnyTimes().
 		Return(nil)
 
-	keeper := NewKeeper(ctx, repo, *conf)
+	keeper := NewKeeper(ctx, repo, nil, *conf)
 
 	// Init web.
 	// Get the swagger description of our API

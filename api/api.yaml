@@ -238,6 +238,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /api/user/file/add:
+    post:
+      summary: Upload file 
+      description: Upload file to s3
+      operationId: AddGfile
+      parameters:
+      requestBody:
+        description: Note add to the store
+        required: true
+        content:
+          application/octet-stream:
+              schema:
+                type: string
+                format: binary
+      responses:
+        '201':
+          description: metadata added 
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Gfile'
+        '401':
+          description: not authorized
+        '500':
+          description: Internal error upload file
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     User:
@@ -344,10 +377,40 @@ components:
       properties:
         definition:
           type: string
+          format: string
           description: Common sectert header
         note:
           type: string
-          description: main text data
+          format: string
+          description: main text data 
+    Gfile:
+      allOf:
+        - $ref: '#/components/schemas/NewGfile'
+        - required:
+          - gfileID
+          - storageID
+          properties:
+            gfileID:
+              type: string
+              format: string
+              description: file id - secret_id in DB.
+            storageID:
+              type: string
+              format: string
+              description: storage - id in minio storage.
+    NewGfile:
+      required:
+        - definition
+        - fname
+      properties:
+        definition:
+          type: string
+          format: string
+          description: Common sectert header
+        fname:
+          type: string
+          format: string
+          description: File name on the user's side
     Error:
       required:
         - code

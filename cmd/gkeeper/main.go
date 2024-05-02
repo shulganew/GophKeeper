@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	
+
 	// Get application config.
 	conf := config.InitConfig()
 
@@ -31,6 +31,12 @@ func main() {
 		zap.S().Fatalln(err)
 	}
 
+	// Init file storage
+	fstor, err := app.InitMinIO(ctx, conf)
+	if err != nil {
+		zap.S().Fatalln(err)
+	}
+
 	swagger, err := oapi.GetSwagger()
 	if err != nil {
 		zap.S().Fatalln(err)
@@ -42,7 +48,7 @@ func main() {
 	// Create router.
 	rt := router.RouteShear(conf, swagger)
 
-	keeper := services.NewKeeper(ctx, stor, conf)
+	keeper := services.NewKeeper(ctx, stor, fstor, conf)
 
 	// We now register our GophKeeper above as the handler for the interface
 	oapi.HandlerFromMux(keeper, rt)

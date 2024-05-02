@@ -47,6 +47,21 @@ type Error struct {
 	Message string `json:"message"`
 }
 
+// Gfile defines model for Gfile.
+type Gfile struct {
+	// Definition Common sectert header
+	Definition string `json:"definition"`
+
+	// Fname File name on the user's side
+	Fname string `json:"fname"`
+
+	// GfileID file id - secret_id in DB.
+	GfileID string `json:"gfileID"`
+
+	// StorageID storage - id in minio storage.
+	StorageID string `json:"storageID"`
+}
+
 // Gtext defines model for Gtext.
 type Gtext struct {
 	// Definition Common sectert header
@@ -75,6 +90,15 @@ type NewCard struct {
 
 	// Hld holder
 	Hld string `json:"hld"`
+}
+
+// NewGfile defines model for NewGfile.
+type NewGfile struct {
+	// Definition Common sectert header
+	Definition string `json:"definition"`
+
+	// Fname File name on the user's side
+	Fname string `json:"fname"`
 }
 
 // NewGtext defines model for NewGtext.
@@ -160,6 +184,9 @@ type ServerInterface interface {
 	// get all users card data
 	// (GET /api/user/card/list)
 	ListCards(w http.ResponseWriter, r *http.Request)
+	// Upload file
+	// (POST /api/user/file/add)
+	AddGfile(w http.ResponseWriter, r *http.Request)
 	// Add new text note
 	// (POST /api/user/gtext/add)
 	AddGtext(w http.ResponseWriter, r *http.Request)
@@ -199,6 +226,12 @@ func (_ Unimplemented) AddCard(w http.ResponseWriter, r *http.Request) {
 // get all users card data
 // (GET /api/user/card/list)
 func (_ Unimplemented) ListCards(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Upload file
+// (POST /api/user/file/add)
+func (_ Unimplemented) AddGfile(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -286,6 +319,21 @@ func (siw *ServerInterfaceWrapper) ListCards(w http.ResponseWriter, r *http.Requ
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListCards(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// AddGfile operation middleware
+func (siw *ServerInterfaceWrapper) AddGfile(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddGfile(w, r)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -481,6 +529,9 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		r.Get(options.BaseURL+"/api/user/card/list", wrapper.ListCards)
 	})
 	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/api/user/file/add", wrapper.AddGfile)
+	})
+	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/api/user/gtext/add", wrapper.AddGtext)
 	})
 	r.Group(func(r chi.Router) {
@@ -499,29 +550,32 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xYXW/bNhT9KwQ3oB2gWm7aPcxPy9IiM1akw7JgD0UxsOK1xFUiVZKKkwX+78O9pBI5",
-	"omsnbTJj2FMckvfr8NxDUle8ME1rNGjv+OyKu6KCRtDPI2El/hV1/XbBZ++u+LcWFnzGv8lvbPJokJ/A",
-	"kgxW2RVvrWnBegXkpxBWzl/hLwmusKr1ymg+40oynGJSeMEzvjC2EZ7PuPNW6ZJn3F+2cPP/apVxC586",
-	"ZUHy2bve7fvV+1XGX1trLIa4FdpIGAemxYzmBmGV9i8ObqIq7aEEy1cZb8A5UW501E9vTTgE7Jdj2sce",
-	"LvydMA4WY5BLHH8AlHu/AeZ+k8dAF3ocurAglQ/hddd8ADsOl/Hi/DxhijbnYNVCFQLH2LmoO0jZS1go",
-	"rYLdbTdHpmmMZg4KD9az4WTCE1y0Yxdw0SqbDFzVcry8MrVM1XkL1kHSGYEXogc0guuI9zVF1gG/Q9UV",
-	"CJmGXhufYHUjlGYYtefMHUohjzHzUxW83zvxLdvlVCp7jMrOfnuTtKhNqRJxaZgtjGXkM2XZLsdmrXBu",
-	"aexnDD8HVbSIOYUQEbkzBwkxg0aoepwFLnYsTCYy31AyWrFYtzUNs1Aq563YBHasVW7whNNDR8KmHd0C",
-	"pK/92nsWq0Qgev7srI1kMJZGBDqljDjOlGRPSae0V6L+U8nv7iGSMQJqJE4pvTDh9NFeFH6wd1y0yoNo",
-	"fnRLUZZgJ8pg04gGnZ+GMXb465z9DqLhGe8sGlXet26W5wMj0r1hMcemrX4BaMEy5Zhw8Kmzyl+yHlnm",
-	"wJ6rAthT/EE7Zj3WWqsCtCOgYx6HrSgqYAeT6SiD5XI5ETQ9MbbMo63L38yPXp+cvn52MJlOKt/UmJ8H",
-	"27i3i9MQN1lGTmtyxFf5GtfMS2OfOHZsPlItPOPnYF0o8flkOpmiZ9OCFq3iM/6ChpA/vqK9zkWrctH5",
-	"Kr/mfWucH2/+z0LLGixrxEdgcKGcV7pkHXIZzdlTskeAkErUFnPJZ/xNZCxuPzj/k5GX/VaDDkd529bx",
-	"0Mr/ckHmAknx1xYKU+cTidbTpbDsBJaMVgzp520HxEfXGtwMjHIwnSaUsSsKcG7R1aHxEcqXqYXhWiMB",
-	"LyyMSqCVz8cr/7BGl1FGjL0mWzyWRVf7rwZOuOEloOk0XLR4YkgGcU3GXdc0wl6uCR1N3BAkCFUU2u0c",
-	"0bAM9LBDnVwnx5EF4WGwQ4/IEKpTSMm8Yb4C5ryha8s2ojzfoOgF1SK3kIRWYedUwlXhABiS4OX0h7Fl",
-	"4LJyCCet+j7l/0joJ56V4NnZ2fwVsovQxzh7R6+1w/OaZZhvjhfZXEi5mWWHUhK5hrf0dVodSkm37gfj",
-	"VHi4jWvH8XtzaufklIfGbcsyvi37g1hYKy43prwbd3cROHKnjadDwVj192cYO9cerBZ14Anrwbt5puwF",
-	"YXu6SfgQ32YpxtYqULWEBGNxMtAVb05ANyc3GR+VynkEwfH06fTvEASzgvAmdregQbERdU1C4wb9uI4P",
-	"vYh3a2l6RNGTKNHS4WH3YD0dPxSMATgxHvakqfuPGVs3jRZ+xbY+7nfmv9fXN5xL0XZ7X6PphmYm1B6n",
-	"m3dmRmxnyhrXH0xfjgs7MaxP78u5Qyf+/ahDL846vDX2iTvrwkdYppQP099N+KjQweHA2DMay+JbQWh5",
-	"fU+cpMTxNHwceSBtDB8KxjDRt6P9kMb4LWMr/+9wV38Mcu+vLjo1kkTi83ZF/DIyo0DhZj6Obu5Kmyib",
-	"Tv0vm19LNgnLXjZXq38CAAD//0Gh939ZGwAA",
+	"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",
+	"tc2HapuEZds2F4u/AwAA///LCZtkGCAAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

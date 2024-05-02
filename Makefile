@@ -28,8 +28,8 @@ minio-stop:
 .PHONY: oapi
 
 oapi: 
-	go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=internal/app/config/oapi.yaml --package oapi api/keeper.yaml
-	
+	go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=internal/app/config/oapi.yaml --package oapi api/api.yaml
+
 #Migrations
 
 .PHONY: pg
