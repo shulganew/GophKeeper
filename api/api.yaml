@@ -271,6 +271,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /api/user/file/list:
+    get:
+      summary: get all users files data 
+      description: list files.
+      operationId: ListGfiles
+      responses:
+        '200':
+          description: Listed files
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Gfile'
+        '204':
+          description: No content
+        '400':
+          description: Error decode json
+        '401':
+          description: User not authorized
+        '500':
+          description: Internal error site listing
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     User:

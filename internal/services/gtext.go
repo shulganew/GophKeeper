@@ -72,28 +72,28 @@ func (k *Keeper) ListGtexts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load decoded data and decode binary data to oapi.Gtext.
-	var Gtexts []oapi.Gtext
+	var gtexts []oapi.Gtext
 	for _, secret := range secretDecoded {
-		var newGtext oapi.NewGtext
-		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&newGtext)
+		var gtext oapi.Gtext
+		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&gtext)
 		if err != nil {
 			zap.S().Errorln("Error decode Gtext to data: ", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		Gtext := oapi.Gtext{GtextID: secret.UUID.String(), Definition: newGtext.Definition, Note: newGtext.Note}
-		Gtexts = append(Gtexts, Gtext)
+		gtext.GtextID = secret.UUID.String()
+		gtexts = append(gtexts, gtext)
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	if len(Gtexts) == 0 {
+	if len(gtexts) == 0 {
 		zap.S().Infoln("No content.")
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 	// Set status code 200.
 	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(Gtexts)
+	err = json.NewEncoder(w).Encode(gtexts)
 	if err != nil {
 		zap.S().Errorln("Can't write to response in ListGtexts handler", err)
 	}

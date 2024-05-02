@@ -1,6 +1,5 @@
 package pg
 
-
 import (
 	"context"
 	"fmt"
@@ -10,14 +9,15 @@ import (
 )
 
 // TODO add UNICQUE siteURL+login with error duplicated.
-func (r *Repo) AddSite(ctx context.Context, site entities.NewSecretEncoded) (secretID *uuid.UUID, err error) {
+
+func (r *Repo) AddSecretStor(ctx context.Context, entity entities.NewSecretEncoded, stype entities.SecretType) (secretID *uuid.UUID, err error) {
 	query := `
 	INSERT INTO secrets (user_id, type, data, ekey_version, dkey, uploaded) 
 	VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING secret_id
 	`
 	secretID = &uuid.UUID{}
-	err = r.db.GetContext(ctx, secretID, query, site.UserID, site.Type, site.DataCr, site.EKeyVer, site.DKey, site.Uploaded)
+	err = r.db.GetContext(ctx, secretID, query, entity.UserID, stype, entity.DataCr, entity.EKeyVer, entity.DKey, entity.Uploaded)
 	if err != nil {
 		return nil, fmt.Errorf("db error during add Site credentials, error: %w", err)
 	}
@@ -25,7 +25,7 @@ func (r *Repo) AddSite(ctx context.Context, site entities.NewSecretEncoded) (sec
 }
 
 // TODO add UNICQUE siteURL+login with error duplicated.
-func (r *Repo) GetSites(ctx context.Context, userID string, stype entities.SecretType) (sites []entities.SecretEncoded, err error) {
+func (r *Repo) GetSecretStor(ctx context.Context, userID string, stype entities.SecretType) (sites []entities.SecretEncoded, err error) {
 	query := `
 	SELECT secret_id, data, ekey_version, dkey, uploaded
 	FROM secrets 

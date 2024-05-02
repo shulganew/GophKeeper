@@ -74,14 +74,14 @@ func (k *Keeper) ListCards(w http.ResponseWriter, r *http.Request) {
 	// Load decoded data and decode binary data to oapi.Card.
 	var cards []oapi.Card
 	for _, secret := range secretDecoded {
-		var newCard oapi.NewCard
-		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&newCard)
+		var card oapi.Card
+		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&card)
 		if err != nil {
 			zap.S().Errorln("Error decode card to data: ", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		card := oapi.Card{CardID: secret.UUID.String(), Definition: newCard.Definition, Ccn: newCard.Ccn, Exp: newCard.Exp, Cvv: newCard.Cvv, Hld: newCard.Hld}
+		card.CardID = secret.UUID.String()
 		cards = append(cards, card)
 	}
 

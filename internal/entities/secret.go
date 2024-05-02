@@ -13,7 +13,7 @@ const (
 	SITE SecretType = "SITE"
 	CARD SecretType = "CARD"
 	TEXT SecretType = "TEXT"
-	BIN  SecretType = "BIN"
+	FILE SecretType = "BIN"
 )
 
 func (s *SecretType) String() string {

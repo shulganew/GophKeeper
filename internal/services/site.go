@@ -73,14 +73,14 @@ func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
 	// Load decoded data and decode binary data to oapi.Site.
 	var sites []oapi.Site
 	for _, secret := range secretDecoded {
-		var newSite oapi.NewSite
-		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&newSite)
+		var site oapi.Site
+		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&site)
 		if err != nil {
 			zap.S().Errorln("Error decode site to data: ", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		site := oapi.Site{Definition: newSite.Definition, SiteID: secret.UUID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
+		site.SiteID = secret.UUID.String()
 		sites = append(sites, site)
 	}
 

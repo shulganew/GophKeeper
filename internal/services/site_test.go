@@ -114,7 +114,7 @@ func TestSite(t *testing.T) {
 			//
 			nsite := oapi.NewSite{Definition: "mysite", Site: "www.ru", Slogin: "igor", Spw: "123"}
 			_ = repo.EXPECT().
-				AddSite(gomock.Any(), gomock.Any()).
+				AddSecretStor(gomock.Any(), gomock.Any(), gomock.Any()).
 				AnyTimes().
 				Return(&secret_id, nil)
 

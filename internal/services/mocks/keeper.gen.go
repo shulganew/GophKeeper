@@ -6,6 +6,7 @@ package mocks
 
 import (
 	context "context"
+	io "io"
 	reflect "reflect"
 
 	uuid "github.com/gofrs/uuid"
@@ -36,19 +37,19 @@ func (m *MockKeeperer) EXPECT() *MockKeepererMockRecorder {
 	return m.recorder
 }
 
-// AddSite mocks base method.
-func (m *MockKeeperer) AddSite(ctx context.Context, site entities.NewSecretEncoded) (*uuid.UUID, error) {
+// AddSecretStor mocks base method.
+func (m *MockKeeperer) AddSecretStor(ctx context.Context, entity entities.NewSecretEncoded, stype entities.SecretType) (*uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddSite", ctx, site)
+	ret := m.ctrl.Call(m, "AddSecretStor", ctx, entity, stype)
 	ret0, _ := ret[0].(*uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// AddSite indicates an expected call of AddSite.
-func (mr *MockKeepererMockRecorder) AddSite(ctx, site interface{}) *gomock.Call {
+// AddSecretStor indicates an expected call of AddSecretStor.
+func (mr *MockKeepererMockRecorder) AddSecretStor(ctx, entity, stype interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSite", reflect.TypeOf((*MockKeeperer)(nil).AddSite), ctx, site)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSecretStor", reflect.TypeOf((*MockKeeperer)(nil).AddSecretStor), ctx, entity, stype)
 }
 
 // AddUser mocks base method.
@@ -81,19 +82,19 @@ func (mr *MockKeepererMockRecorder) GetByLogin(ctx, login interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByLogin", reflect.TypeOf((*MockKeeperer)(nil).GetByLogin), ctx, login)
 }
 
-// GetSites mocks base method.
-func (m *MockKeeperer) GetSites(ctx context.Context, userID string, stype entities.SecretType) ([]entities.SecretEncoded, error) {
+// GetSecretStor mocks base method.
+func (m *MockKeeperer) GetSecretStor(ctx context.Context, userID string, stype entities.SecretType) ([]entities.SecretEncoded, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSites", ctx, userID, stype)
+	ret := m.ctrl.Call(m, "GetSecretStor", ctx, userID, stype)
 	ret0, _ := ret[0].([]entities.SecretEncoded)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetSites indicates an expected call of GetSites.
-func (mr *MockKeepererMockRecorder) GetSites(ctx, userID, stype interface{}) *gomock.Call {
+// GetSecretStor indicates an expected call of GetSecretStor.
+func (mr *MockKeepererMockRecorder) GetSecretStor(ctx, userID, stype interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSites", reflect.TypeOf((*MockKeeperer)(nil).GetSites), ctx, userID, stype)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecretStor", reflect.TypeOf((*MockKeeperer)(nil).GetSecretStor), ctx, userID, stype)
 }
 
 // LoadEKeysc mocks base method.
@@ -137,4 +138,41 @@ func (m *MockKeeperer) SaveEKeysc(ctx context.Context, eKeysc []entities.EKeyDB)
 func (mr *MockKeepererMockRecorder) SaveEKeysc(ctx, eKeysc interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEKeysc", reflect.TypeOf((*MockKeeperer)(nil).SaveEKeysc), ctx, eKeysc)
+}
+
+// MockFileKeeper is a mock of FileKeeper interface.
+type MockFileKeeper struct {
+	ctrl     *gomock.Controller
+	recorder *MockFileKeeperMockRecorder
+}
+
+// MockFileKeeperMockRecorder is the mock recorder for MockFileKeeper.
+type MockFileKeeperMockRecorder struct {
+	mock *MockFileKeeper
+}
+
+// NewMockFileKeeper creates a new mock instance.
+func NewMockFileKeeper(ctrl *gomock.Controller) *MockFileKeeper {
+	mock := &MockFileKeeper{ctrl: ctrl}
+	mock.recorder = &MockFileKeeperMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockFileKeeper) EXPECT() *MockFileKeeperMockRecorder {
+	return m.recorder
+}
+
+// UploadFile mocks base method.
+func (m *MockFileKeeper) UploadFile(ctx context.Context, fileID string, fr io.ReadCloser) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UploadFile", ctx, fileID, fr)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UploadFile indicates an expected call of UploadFile.
+func (mr *MockFileKeeperMockRecorder) UploadFile(ctx, fileID, fr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadFile", reflect.TypeOf((*MockFileKeeper)(nil).UploadFile), ctx, fileID, fr)
 }

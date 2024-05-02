@@ -203,7 +203,7 @@ func (k *Keeper) AddSecret(ctx context.Context, userID string, dataType entities
 
 	dbSite := entities.NewSecretEncoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: eKey.TS, DKey: dKeyc, Uploaded: time.Now()}, DataCr: datac}
 
-	secretID, err = k.stor.AddSite(ctx, dbSite)
+	secretID, err = k.stor.AddSecretStor(ctx, dbSite, dataType)
 	if err != nil {
 		zap.S().Errorln("Error adding site credentials: ", err)
 		return nil, err
@@ -213,7 +213,7 @@ func (k *Keeper) AddSecret(ctx context.Context, userID string, dataType entities
 
 func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entities.SecretType) (secrets []entities.SecretDecoded, err error) {
 	// Load all user's sites coded credentials from database.
-	secretsc, err := k.stor.GetSites(ctx, userID, dataType)
+	secretsc, err := k.stor.GetSecretStor(ctx, userID, dataType)
 	if err != nil {
 		zap.S().Errorln("Error getting site credentials: ", err)
 		return nil, err
