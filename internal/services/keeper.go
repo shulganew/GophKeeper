@@ -15,6 +15,7 @@ import (
 	"io"
 
 	"github.com/gofrs/uuid"
+	"github.com/minio/minio-go/v7"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/app/config"
 	"github.com/shulganew/GophKeeper/internal/entities"
@@ -42,8 +43,8 @@ type Keeperer interface {
 
 	// Entities credentials methods (site, card, text, file)
 	AddSecretStor(ctx context.Context, entity entities.NewSecretEncoded, stype entities.SecretType) (siteID *uuid.UUID, err error)
-	GetSecretStor(ctx context.Context, userID string, stype entities.SecretType) (site []entities.SecretEncoded, err error)
-
+	GetSecretsStor(ctx context.Context, userID string, stype entities.SecretType) (site []entities.SecretEncoded, err error)
+	GetSecretStor(ctx context.Context, userID string, stype entities.SecretType, secretID string) (site *entities.SecretEncoded, err error)
 	// Operations with keys.
 	// Get Ephemeral encoded keys from storage
 	SaveEKeysc(ctx context.Context, eKeysc []entities.EKeyDB) (err error) // Many keys
@@ -53,6 +54,7 @@ type Keeperer interface {
 
 type FileKeeper interface {
 	UploadFile(ctx context.Context, fileID string, fr io.ReadCloser) (err error)
+	DownloadFile(ctx context.Context, fileID string) (fr *minio.Object, err error)
 }
 
 // Check interfaces.

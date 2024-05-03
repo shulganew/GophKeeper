@@ -81,7 +81,7 @@ func (k *Keeper) ListGtexts(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		gtext.GtextID = secret.UUID.String()
+		gtext.GtextID = secret.SecretID.String()
 		gtexts = append(gtexts, gtext)
 	}
 

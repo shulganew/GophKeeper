@@ -80,7 +80,7 @@ func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		site.SiteID = secret.UUID.String()
+		site.SiteID = secret.SecretID.String()
 		sites = append(sites, site)
 	}
 

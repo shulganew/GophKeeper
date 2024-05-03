@@ -83,18 +83,33 @@ func (mr *MockKeepererMockRecorder) GetByLogin(ctx, login interface{}) *gomock.C
 }
 
 // GetSecretStor mocks base method.
-func (m *MockKeeperer) GetSecretStor(ctx context.Context, userID string, stype entities.SecretType) ([]entities.SecretEncoded, error) {
+func (m *MockKeeperer) GetSecretStor(ctx context.Context, userID string, stype entities.SecretType, secretID string) (*entities.SecretEncoded, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSecretStor", ctx, userID, stype)
-	ret0, _ := ret[0].([]entities.SecretEncoded)
+	ret := m.ctrl.Call(m, "GetSecretStor", ctx, userID, stype, secretID)
+	ret0, _ := ret[0].(*entities.SecretEncoded)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetSecretStor indicates an expected call of GetSecretStor.
-func (mr *MockKeepererMockRecorder) GetSecretStor(ctx, userID, stype interface{}) *gomock.Call {
+func (mr *MockKeepererMockRecorder) GetSecretStor(ctx, userID, stype, secretID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecretStor", reflect.TypeOf((*MockKeeperer)(nil).GetSecretStor), ctx, userID, stype)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecretStor", reflect.TypeOf((*MockKeeperer)(nil).GetSecretStor), ctx, userID, stype, secretID)
+}
+
+// GetSecretsStor mocks base method.
+func (m *MockKeeperer) GetSecretsStor(ctx context.Context, userID string, stype entities.SecretType) ([]entities.SecretEncoded, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSecretsStor", ctx, userID, stype)
+	ret0, _ := ret[0].([]entities.SecretEncoded)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSecretsStor indicates an expected call of GetSecretsStor.
+func (mr *MockKeepererMockRecorder) GetSecretsStor(ctx, userID, stype interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecretsStor", reflect.TypeOf((*MockKeeperer)(nil).GetSecretsStor), ctx, userID, stype)
 }
 
 // LoadEKeysc mocks base method.

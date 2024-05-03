@@ -299,6 +299,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  /api/user/file/{fileID}:
+    get:
+      summary: download file from storage by file ID
+      description: file id is a secret id in DB, storage id - in minio
+      operationId: GetGfile
+      parameters:
+        - name: fileID
+          in: path
+          description: ID of file to return
+          required: true
+          schema:
+            type: string
+            format: string
+      responses:
+        '200':
+          description: file data
+          required: true
+          content:
+            application/octet-stream:
+                schema:
+                  type: string
+                  format: binary
+        '401':
+          description: User not authorized
+        '500':
+          description: Internal error site listing
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     User:
@@ -416,20 +449,16 @@ components:
         - $ref: '#/components/schemas/NewGfile'
         - required:
           - gfileID
-          - storageID
           properties:
             gfileID:
               type: string
               format: string
               description: file id - secret_id in DB.
-            storageID:
-              type: string
-              format: string
-              description: storage - id in minio storage.
     NewGfile:
       required:
         - definition
         - fname
+        - storageID
       properties:
         definition:
           type: string
@@ -439,6 +468,10 @@ components:
           type: string
           format: string
           description: File name on the user's side
+        storageID:
+          type: string
+          format: string
+          description: storage - id in minio storage.
     Error:
       required:
         - code

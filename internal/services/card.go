@@ -81,7 +81,7 @@ func (k *Keeper) ListCards(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		card.CardID = secret.UUID.String()
+		card.CardID = secret.SecretID.String()
 		cards = append(cards, card)
 	}
 

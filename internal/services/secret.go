@@ -211,9 +211,10 @@ func (k *Keeper) AddSecret(ctx context.Context, userID string, dataType entities
 	return
 }
 
+// Get all secret from storage particular type.
 func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entities.SecretType) (secrets []entities.SecretDecoded, err error) {
 	// Load all user's sites coded credentials from database.
-	secretsc, err := k.stor.GetSecretStor(ctx, userID, dataType)
+	secretsc, err := k.stor.GetSecretsStor(ctx, userID, dataType)
 	if err != nil {
 		zap.S().Errorln("Error getting site credentials: ", err)
 		return nil, err
@@ -235,9 +236,35 @@ func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entitie
 			return nil, err
 		}
 
-		secretDecoded := entities.SecretDecoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: secret.EKeyVer, Uploaded: secret.Uploaded}, UUID: secret.UUID, Data: data}
-		//Definition: newSite.Definition, SiteID: dbSite.UUID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
+		secretDecoded := entities.SecretDecoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: secret.EKeyVer, Uploaded: secret.Uploaded}, SecretID: secret.SecretID, Data: data}
 		secrets = append(secrets, secretDecoded)
 	}
+	return
+}
+
+// Get all secret from storage by secretID.
+func (k *Keeper) GetSecret(ctx context.Context, userID string, dataType entities.SecretType, secretID string) (secret *entities.SecretDecoded, err error) {
+	// Load all user's sites coded credentials from database.
+	secretsc, err := k.stor.GetSecretStor(ctx, userID, dataType, secretID)
+	if err != nil {
+		zap.S().Errorln("Error getting site credentials: ", err)
+		return nil, err
+	}
+
+	// Get ephemeral key (version from ts in db) for decode data key.
+	eKey := k.GetEKey(secretsc.EKeyVer)
+	// Decode dKeyc
+	dKey, err := DecodeKey(secretsc.DKey, eKey.EKey)
+	if err != nil {
+		zap.S().Errorln("Error decode data key: ", err)
+		return nil, err
+	}
+	// Decode data.
+	data, err := DecodeData(dKey, secretsc.DataCr)
+	if err != nil {
+		zap.S().Errorln("Error decode stored data: ", err)
+		return nil, err
+	}
+	secret = &entities.SecretDecoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: eKey.TS, Uploaded: secretsc.Uploaded}, SecretID: secretsc.SecretID, Data: data}
 	return
 }

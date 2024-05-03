@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/gofrs/uuid"
@@ -51,12 +52,15 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate file id for minio.
-	fileID, err := uuid.NewV7()
+	storageID, err := uuid.NewV7()
 	if err != nil {
 		http.Error(w, "Can't generate uuid.", http.StatusInternalServerError)
 	}
 
-	err = k.fstor.UploadFile(r.Context(), fileID.String(), fr)
+	// Add storage id to nfile before savig to DB
+	nfile.StorageID = storageID.String()
+
+	err = k.fstor.UploadFile(r.Context(), storageID.String(), fr)
 	if err != nil {
 		zap.S().Errorln("Can't upload: ", err)
 		http.Error(w, "Can't upload file fo s3.", http.StatusInternalServerError)
@@ -80,7 +84,7 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return created gfile to client in responce (client add it to client's mem storage)
-	gfile := oapi.Gfile{GfileID: secretID.String(), StorageID: fileID.String(), Definition: nfile.Definition, Fname: nfile.Fname}
+	gfile := oapi.Gfile{GfileID: secretID.String(), StorageID: storageID.String(), Definition: nfile.Definition, Fname: nfile.Fname}
 	w.Header().Add("Content-Type", "application/json")
 
 	// set status code 201
@@ -120,7 +124,7 @@ func (k *Keeper) ListGfiles(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		gfile.GfileID = secret.UUID.String()
+		gfile.GfileID = secret.SecretID.String()
 		gfiles = append(gfiles, gfile)
 	}
 
@@ -137,4 +141,62 @@ func (k *Keeper) ListGfiles(w http.ResponseWriter, r *http.Request) {
 		zap.S().Errorln("Can't write to response in Listgfiles handler", err)
 	}
 
+}
+
+// Return gfile from storage. fileID == secretID (+) entities.FILE
+func (k *Keeper) GetGfile(w http.ResponseWriter, r *http.Request, fileID string) {
+	// Check registration.
+	userID, isRegistered := CheckUserAuth(r.Context())
+	if !isRegistered {
+		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+		return
+	}
+
+	// Get Gfile from DB.
+	// Load all user's gfiles from database.
+	secretDecoded, err := k.GetSecret(r.Context(), userID, entities.FILE, fileID)
+	if err != nil {
+		zap.S().Errorln("Error getting Gfile credentials: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if secretDecoded == nil {
+		zap.S().Infoln("File not found")
+		http.Error(w, "file not found", http.StatusInternalServerError)
+		return
+	}
+
+	// Load decoded data and decode binary data to oapi.gfile.
+	var gfile oapi.Gfile
+	err = gob.NewDecoder(bytes.NewReader(secretDecoded.Data)).Decode(&gfile)
+	if err != nil {
+		zap.S().Errorln("Error decode gfile to data: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	fr, err := k.fstor.DownloadFile(r.Context(), gfile.StorageID)
+	if err != nil {
+		zap.S().Errorln("Can't Download: ", err)
+		http.Error(w, "Can't Download.", http.StatusInternalServerError)
+	}
+	defer func() {
+		err := fr.Close()
+		if err != nil {
+			zap.S().Errorln("Can't close minio: ", err)
+		}
+	}()
+
+	// set status code 200
+	w.WriteHeader(http.StatusOK)
+
+	stat, err := fr.Stat()
+	if err != nil {
+		zap.S().Errorln("Can't get file stat: ", err)
+		http.Error(w, "Can't get file stat.", http.StatusInternalServerError)
+	}
+
+	if _, err := io.CopyN(w, fr, stat.Size); err != nil {
+		zap.S().Errorln("Can't copy to resp: ", err)
+		http.Error(w, "Can't copy to resp.", http.StatusInternalServerError)
+	}
 }
