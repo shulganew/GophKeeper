@@ -53,7 +53,7 @@ type Keeperer interface {
 }
 
 type FileKeeper interface {
-	UploadFile(ctx context.Context, fileID string, fr io.ReadCloser) (err error)
+	UploadFile(ctx context.Context, fileID string, fr io.Reader) (err error)
 	DownloadFile(ctx context.Context, fileID string) (fr *minio.Object, err error)
 }
 

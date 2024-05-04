@@ -458,7 +458,6 @@ components:
       required:
         - definition
         - fname
-        - storageID
       properties:
         definition:
           type: string
@@ -468,10 +467,6 @@ components:
           type: string
           format: string
           description: File name on the user's side
-        storageID:
-          type: string
-          format: string
-          description: storage - id in minio storage.
     Error:
       required:
         - code

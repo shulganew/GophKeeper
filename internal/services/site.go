@@ -34,7 +34,7 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secretID, err := k.AddSecret(r.Context(), userID, entities.SITE, db.Bytes())
+	secretID, _, err := k.AddSecret(r.Context(), userID, entities.SITE, db.Bytes())
 	if err != nil {
 		zap.S().Errorln("Error adding site to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -34,7 +34,7 @@ func (k *Keeper) AddCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secretID, err := k.AddSecret(r.Context(), userID, entities.CARD, db.Bytes())
+	secretID, _, err := k.AddSecret(r.Context(), userID, entities.CARD, db.Bytes())
 	if err != nil {
 		zap.S().Errorln("Error adding card to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

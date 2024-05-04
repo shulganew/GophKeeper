@@ -34,7 +34,7 @@ func (k *Keeper) AddGtext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	secretID, err := k.AddSecret(r.Context(), userID, entities.TEXT, db.Bytes())
+	secretID, _, err := k.AddSecret(r.Context(), userID, entities.TEXT, db.Bytes())
 	if err != nil {
 		zap.S().Errorln("Error adding Gtext to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
