@@ -72,7 +72,7 @@ func (k *Keeper) ListGtexts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load decoded data and decode binary data to oapi.Gtext.
-	var gtexts []oapi.Gtext
+	gtexts := make(map[string]oapi.Gtext, len(secretDecoded))
 	for _, secret := range secretDecoded {
 		var gtext oapi.Gtext
 		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&gtext)
@@ -82,7 +82,7 @@ func (k *Keeper) ListGtexts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gtext.GtextID = secret.SecretID.String()
-		gtexts = append(gtexts, gtext)
+		gtexts[gtext.GtextID] = gtext
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -97,4 +97,37 @@ func (k *Keeper) ListGtexts(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.S().Errorln("Can't write to response in ListGtexts handler", err)
 	}
+}
+
+func (k *Keeper) UpdateGtext(w http.ResponseWriter, r *http.Request) {
+	// Check registration.
+	userID, isRegistered := CheckUserAuth(r.Context())
+	if !isRegistered {
+		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+		return
+	}
+	// Decode gtext credentials from JSON.
+	var gtext oapi.Gtext
+	if err := json.NewDecoder(r.Body).Decode(&gtext); err != nil {
+		sendKeeperError(w, http.StatusBadRequest, "Invalid format for NewSite")
+		return
+	}
+	// Write data to storage.
+	var db bytes.Buffer
+	err := gob.NewEncoder(&db).Encode(&gtext)
+	if err != nil {
+		zap.S().Errorln("Error coding site to data: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = k.UpdateSecret(r.Context(), userID, entities.SITE, db.Bytes(), gtext.GtextID)
+	if err != nil {
+		zap.S().Errorln("Error adding site to DB: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// set status code 200
+	w.WriteHeader(http.StatusOK)
 }

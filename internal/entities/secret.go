@@ -28,7 +28,7 @@ type NewSecret struct {
 	UserID   string     `db:"user_id"`
 	Type     SecretType `db:"type"` // Type of data - Site data, Credit card, Text or file.
 	EKeyVer  time.Time  `db:"ekey_version"`
-	DKey     []byte     `db:"dkey"`
+	DKeyCr   []byte     `db:"dkey"`
 	Uploaded time.Time  `db:"uploaded"`
 }
 type SecretDecoded struct {

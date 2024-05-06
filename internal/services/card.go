@@ -72,7 +72,7 @@ func (k *Keeper) ListCards(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load decoded data and decode binary data to oapi.Card.
-	var cards []oapi.Card
+	cards := make(map[string]oapi.Card, len(secretDecoded))
 	for _, secret := range secretDecoded {
 		var card oapi.Card
 		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&card)
@@ -82,7 +82,7 @@ func (k *Keeper) ListCards(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		card.CardID = secret.SecretID.String()
-		cards = append(cards, card)
+		cards[card.CardID] = card
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -97,4 +97,57 @@ func (k *Keeper) ListCards(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.S().Errorln("Can't write to response in ListCards handler", err)
 	}
+}
+
+func (k *Keeper) UpdateCard(w http.ResponseWriter, r *http.Request) {
+	// Check registration.
+	userID, isRegistered := CheckUserAuth(r.Context())
+	if !isRegistered {
+		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+		return
+	}
+	// Decode gtext credentials from JSON.
+	var gtext oapi.Card
+	if err := json.NewDecoder(r.Body).Decode(&gtext); err != nil {
+		sendKeeperError(w, http.StatusBadRequest, "Invalid format for NewSite")
+		return
+	}
+	// Write data to storage.
+	var db bytes.Buffer
+	err := gob.NewEncoder(&db).Encode(&gtext)
+	if err != nil {
+		zap.S().Errorln("Error coding site to data: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = k.UpdateSecret(r.Context(), userID, entities.SITE, db.Bytes(), gtext.CardID)
+	if err != nil {
+		zap.S().Errorln("Error adding site to DB: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// set status code 200
+	w.WriteHeader(http.StatusOK)
+}
+
+// Delelete card data
+func (k *Keeper) DelCard(w http.ResponseWriter, r *http.Request, cardID string) {
+	// Check registration.
+	_, isRegistered := CheckUserAuth(r.Context())
+	if !isRegistered {
+		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+		return
+	}
+
+	err := k.DeleteSecret(r.Context(), cardID)
+	if err != nil {
+		zap.S().Errorln("Error adding site to DB: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// set status code 200
+	w.WriteHeader(http.StatusOK)
 }

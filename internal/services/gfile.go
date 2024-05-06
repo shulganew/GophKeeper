@@ -126,7 +126,7 @@ func (k *Keeper) ListGfiles(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load decoded data and decode binary data to oapi.gfile.
-	var gfiles []oapi.Gfile
+	gfiles := make(map[string]oapi.Gfile, len(secretDecoded))
 	for _, secret := range secretDecoded {
 		var gfile oapi.Gfile
 		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&gfile)
@@ -136,7 +136,7 @@ func (k *Keeper) ListGfiles(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gfile.GfileID = secret.SecretID.String()
-		gfiles = append(gfiles, gfile)
+		gfiles[gfile.GfileID] = gfile
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -216,7 +216,7 @@ func (k *Keeper) GetGfile(w http.ResponseWriter, r *http.Request, fileID string)
 		return
 	}
 
-	dataF, err := DecodeData(secretDecoded.DKey, dataFc)
+	dataF, err := DecodeData(secretDecoded.DKeyCr, dataFc)
 	if err != nil {
 		zap.S().Errorln("Error decode data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -224,7 +224,7 @@ func (k *Keeper) GetGfile(w http.ResponseWriter, r *http.Request, fileID string)
 	}
 
 	// Copy and Decode file reader.
-	zap.S().Debugln("data key get: ", hex.EncodeToString(secretDecoded.DKey))
+	zap.S().Debugln("data key get: ", hex.EncodeToString(secretDecoded.DKeyCr))
 	if _, err := io.CopyN(w, bytes.NewBuffer(dataF), int64(len(dataF))); err != nil {
 		zap.S().Errorln("Can't copy to resp: ", err)
 		http.Error(w, "Can't copy to resp.", http.StatusInternalServerError)

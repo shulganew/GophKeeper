@@ -11,6 +11,7 @@ import (
 
 	uuid "github.com/gofrs/uuid"
 	gomock "github.com/golang/mock/gomock"
+	minio "github.com/minio/minio-go/v7"
 	entities "github.com/shulganew/GophKeeper/internal/entities"
 )
 
@@ -67,6 +68,20 @@ func (mr *MockKeepererMockRecorder) AddUser(ctx, login, hash, email interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUser", reflect.TypeOf((*MockKeeperer)(nil).AddUser), ctx, login, hash, email)
 }
 
+// DeleteSecretStor mocks base method.
+func (m *MockKeeperer) DeleteSecretStor(ctx context.Context, secretID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteSecretStor", ctx, secretID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteSecretStor indicates an expected call of DeleteSecretStor.
+func (mr *MockKeepererMockRecorder) DeleteSecretStor(ctx, secretID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSecretStor", reflect.TypeOf((*MockKeeperer)(nil).DeleteSecretStor), ctx, secretID)
+}
+
 // GetByLogin mocks base method.
 func (m *MockKeeperer) GetByLogin(ctx context.Context, login string) (*entities.User, error) {
 	m.ctrl.T.Helper()
@@ -83,18 +98,18 @@ func (mr *MockKeepererMockRecorder) GetByLogin(ctx, login interface{}) *gomock.C
 }
 
 // GetSecretStor mocks base method.
-func (m *MockKeeperer) GetSecretStor(ctx context.Context, userID string, stype entities.SecretType, secretID string) (*entities.SecretEncoded, error) {
+func (m *MockKeeperer) GetSecretStor(ctx context.Context, secretID string) (*entities.SecretEncoded, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetSecretStor", ctx, userID, stype, secretID)
+	ret := m.ctrl.Call(m, "GetSecretStor", ctx, secretID)
 	ret0, _ := ret[0].(*entities.SecretEncoded)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetSecretStor indicates an expected call of GetSecretStor.
-func (mr *MockKeepererMockRecorder) GetSecretStor(ctx, userID, stype, secretID interface{}) *gomock.Call {
+func (mr *MockKeepererMockRecorder) GetSecretStor(ctx, secretID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecretStor", reflect.TypeOf((*MockKeeperer)(nil).GetSecretStor), ctx, userID, stype, secretID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSecretStor", reflect.TypeOf((*MockKeeperer)(nil).GetSecretStor), ctx, secretID)
 }
 
 // GetSecretsStor mocks base method.
@@ -155,6 +170,20 @@ func (mr *MockKeepererMockRecorder) SaveEKeysc(ctx, eKeysc interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEKeysc", reflect.TypeOf((*MockKeeperer)(nil).SaveEKeysc), ctx, eKeysc)
 }
 
+// UpdateSecretStor mocks base method.
+func (m *MockKeeperer) UpdateSecretStor(ctx context.Context, entity entities.NewSecretEncoded, secretID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSecretStor", ctx, entity, secretID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSecretStor indicates an expected call of UpdateSecretStor.
+func (mr *MockKeepererMockRecorder) UpdateSecretStor(ctx, entity, secretID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSecretStor", reflect.TypeOf((*MockKeeperer)(nil).UpdateSecretStor), ctx, entity, secretID)
+}
+
 // MockFileKeeper is a mock of FileKeeper interface.
 type MockFileKeeper struct {
 	ctrl     *gomock.Controller
@@ -178,8 +207,23 @@ func (m *MockFileKeeper) EXPECT() *MockFileKeeperMockRecorder {
 	return m.recorder
 }
 
+// DownloadFile mocks base method.
+func (m *MockFileKeeper) DownloadFile(ctx context.Context, fileID string) (*minio.Object, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DownloadFile", ctx, fileID)
+	ret0, _ := ret[0].(*minio.Object)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DownloadFile indicates an expected call of DownloadFile.
+func (mr *MockFileKeeperMockRecorder) DownloadFile(ctx, fileID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadFile", reflect.TypeOf((*MockFileKeeper)(nil).DownloadFile), ctx, fileID)
+}
+
 // UploadFile mocks base method.
-func (m *MockFileKeeper) UploadFile(ctx context.Context, fileID string, fr io.ReadCloser) error {
+func (m *MockFileKeeper) UploadFile(ctx context.Context, fileID string, fr io.Reader) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UploadFile", ctx, fileID, fr)
 	ret0, _ := ret[0].(error)

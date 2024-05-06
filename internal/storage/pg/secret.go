@@ -37,3 +37,4 @@ func (r *Repo) LoadEKeysc(ctx context.Context) (eKeysc []entities.EKeyDB, err er
 	}
 	return
 }
+

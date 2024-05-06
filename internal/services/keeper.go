@@ -44,7 +44,9 @@ type Keeperer interface {
 	// Entities credentials methods (site, card, text, file)
 	AddSecretStor(ctx context.Context, entity entities.NewSecretEncoded, stype entities.SecretType) (siteID *uuid.UUID, err error)
 	GetSecretsStor(ctx context.Context, userID string, stype entities.SecretType) (site []entities.SecretEncoded, err error)
-	GetSecretStor(ctx context.Context, userID string, stype entities.SecretType, secretID string) (site *entities.SecretEncoded, err error)
+	GetSecretStor(ctx context.Context, secretID string) (site *entities.SecretEncoded, err error)
+	UpdateSecretStor(ctx context.Context, entity entities.NewSecretEncoded, secretID string) (err error)
+	DeleteSecretStor(ctx context.Context, secretID string) (err error)
 	// Operations with keys.
 	// Get Ephemeral encoded keys from storage
 	SaveEKeysc(ctx context.Context, eKeysc []entities.EKeyDB) (err error) // Many keys

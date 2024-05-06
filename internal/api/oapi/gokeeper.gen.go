@@ -162,47 +162,68 @@ type CreateUserJSONRequestBody = NewUser
 // AddCardJSONRequestBody defines body for AddCard for application/json ContentType.
 type AddCardJSONRequestBody = NewCard
 
-// AddGtextJSONRequestBody defines body for AddGtext for application/json ContentType.
-type AddGtextJSONRequestBody = NewGtext
+// UpdateCardJSONRequestBody defines body for UpdateCard for application/json ContentType.
+type UpdateCardJSONRequestBody = Card
 
 // AddSiteJSONRequestBody defines body for AddSite for application/json ContentType.
 type AddSiteJSONRequestBody = NewSite
 
+// UpdateSiteJSONRequestBody defines body for UpdateSite for application/json ContentType.
+type UpdateSiteJSONRequestBody = Site
+
+// AddGtextJSONRequestBody defines body for AddGtext for application/json ContentType.
+type AddGtextJSONRequestBody = NewGtext
+
+// UpdateGtextJSONRequestBody defines body for UpdateGtext for application/json ContentType.
+type UpdateGtextJSONRequestBody = Gtext
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// User login
-	// (POST /api/auth/login)
+	// (POST /auth/login)
 	Login(w http.ResponseWriter, r *http.Request)
 	// User registration
-	// (POST /api/auth/register)
+	// (POST /auth/register)
 	CreateUser(w http.ResponseWriter, r *http.Request)
-	// Add new debit card
-	// (POST /api/user/card/add)
-	AddCard(w http.ResponseWriter, r *http.Request)
 	// get all users card data
-	// (GET /api/user/card/list)
+	// (GET /user/card)
 	ListCards(w http.ResponseWriter, r *http.Request)
-	// Upload file
-	// (POST /api/user/file/add)
-	AddGfile(w http.ResponseWriter, r *http.Request)
+	// Add new debit card
+	// (POST /user/card)
+	AddCard(w http.ResponseWriter, r *http.Request)
+	// update card data by id
+	// (PUT /user/card)
+	UpdateCard(w http.ResponseWriter, r *http.Request)
 	// get all users files data
-	// (GET /api/user/file/list)
+	// (GET /user/file)
 	ListGfiles(w http.ResponseWriter, r *http.Request)
+	// Upload file
+	// (POST /user/file)
+	AddGfile(w http.ResponseWriter, r *http.Request)
 	// download file from storage by file ID
-	// (GET /api/user/file/{fileID})
+	// (GET /user/file/{fileID})
 	GetGfile(w http.ResponseWriter, r *http.Request, fileID string)
-	// Add new text note
-	// (POST /api/user/gtext/add)
-	AddGtext(w http.ResponseWriter, r *http.Request)
-	// get all users notes data
-	// (GET /api/user/gtext/list)
-	ListGtexts(w http.ResponseWriter, r *http.Request)
-	// Add new site
-	// (POST /api/user/site/add)
-	AddSite(w http.ResponseWriter, r *http.Request)
 	// get all users sites data
-	// (GET /api/user/site/list)
+	// (GET /user/site)
 	ListSites(w http.ResponseWriter, r *http.Request)
+	// Add new site
+	// (POST /user/site)
+	AddSite(w http.ResponseWriter, r *http.Request)
+	// update site data by id
+	// (PUT /user/site)
+	UpdateSite(w http.ResponseWriter, r *http.Request)
+	// get all users notes data
+	// (GET /user/text)
+	ListGtexts(w http.ResponseWriter, r *http.Request)
+	// Add new text note
+	// (POST /user/text)
+	AddGtext(w http.ResponseWriter, r *http.Request)
+	// update gtext data by id
+	// (PUT /user/text)
+	UpdateGtext(w http.ResponseWriter, r *http.Request)
+	// delet ID
+	// (DELETE /user/{secretID})
+	DelAny(w http.ResponseWriter, r *http.Request, secretID string)
 }
 
 // Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
@@ -210,68 +231,92 @@ type ServerInterface interface {
 type Unimplemented struct{}
 
 // User login
-// (POST /api/auth/login)
+// (POST /auth/login)
 func (_ Unimplemented) Login(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // User registration
-// (POST /api/auth/register)
+// (POST /auth/register)
 func (_ Unimplemented) CreateUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Add new debit card
-// (POST /api/user/card/add)
-func (_ Unimplemented) AddCard(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
 // get all users card data
-// (GET /api/user/card/list)
+// (GET /user/card)
 func (_ Unimplemented) ListCards(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Upload file
-// (POST /api/user/file/add)
-func (_ Unimplemented) AddGfile(w http.ResponseWriter, r *http.Request) {
+// Add new debit card
+// (POST /user/card)
+func (_ Unimplemented) AddCard(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// update card data by id
+// (PUT /user/card)
+func (_ Unimplemented) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // get all users files data
-// (GET /api/user/file/list)
+// (GET /user/file)
 func (_ Unimplemented) ListGfiles(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
+// Upload file
+// (POST /user/file)
+func (_ Unimplemented) AddGfile(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
 // download file from storage by file ID
-// (GET /api/user/file/{fileID})
+// (GET /user/file/{fileID})
 func (_ Unimplemented) GetGfile(w http.ResponseWriter, r *http.Request, fileID string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Add new text note
-// (POST /api/user/gtext/add)
-func (_ Unimplemented) AddGtext(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
-}
-
-// get all users notes data
-// (GET /api/user/gtext/list)
-func (_ Unimplemented) ListGtexts(w http.ResponseWriter, r *http.Request) {
+// get all users sites data
+// (GET /user/site)
+func (_ Unimplemented) ListSites(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Add new site
-// (POST /api/user/site/add)
+// (POST /user/site)
 func (_ Unimplemented) AddSite(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// get all users sites data
-// (GET /api/user/site/list)
-func (_ Unimplemented) ListSites(w http.ResponseWriter, r *http.Request) {
+// update site data by id
+// (PUT /user/site)
+func (_ Unimplemented) UpdateSite(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// get all users notes data
+// (GET /user/text)
+func (_ Unimplemented) ListGtexts(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// Add new text note
+// (POST /user/text)
+func (_ Unimplemented) AddGtext(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// update gtext data by id
+// (PUT /user/text)
+func (_ Unimplemented) UpdateGtext(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusNotImplemented)
+}
+
+// delet ID
+// (DELETE /user/{secretID})
+func (_ Unimplemented) DelAny(w http.ResponseWriter, r *http.Request, secretID string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -314,21 +359,6 @@ func (siw *ServerInterfaceWrapper) CreateUser(w http.ResponseWriter, r *http.Req
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// AddCard operation middleware
-func (siw *ServerInterfaceWrapper) AddCard(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddCard(w, r)
-	}))
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
 // ListCards operation middleware
 func (siw *ServerInterfaceWrapper) ListCards(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -344,12 +374,27 @@ func (siw *ServerInterfaceWrapper) ListCards(w http.ResponseWriter, r *http.Requ
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// AddGfile operation middleware
-func (siw *ServerInterfaceWrapper) AddGfile(w http.ResponseWriter, r *http.Request) {
+// AddCard operation middleware
+func (siw *ServerInterfaceWrapper) AddCard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddGfile(w, r)
+		siw.Handler.AddCard(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// UpdateCard operation middleware
+func (siw *ServerInterfaceWrapper) UpdateCard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateCard(w, r)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -365,6 +410,21 @@ func (siw *ServerInterfaceWrapper) ListGfiles(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListGfiles(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// AddGfile operation middleware
+func (siw *ServerInterfaceWrapper) AddGfile(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddGfile(w, r)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -400,27 +460,12 @@ func (siw *ServerInterfaceWrapper) GetGfile(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// AddGtext operation middleware
-func (siw *ServerInterfaceWrapper) AddGtext(w http.ResponseWriter, r *http.Request) {
+// ListSites operation middleware
+func (siw *ServerInterfaceWrapper) ListSites(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.AddGtext(w, r)
-	}))
-
-	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
-		handler = siw.HandlerMiddlewares[i](handler)
-	}
-
-	handler.ServeHTTP(w, r.WithContext(ctx))
-}
-
-// ListGtexts operation middleware
-func (siw *ServerInterfaceWrapper) ListGtexts(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListGtexts(w, r)
+		siw.Handler.ListSites(w, r)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -445,12 +490,83 @@ func (siw *ServerInterfaceWrapper) AddSite(w http.ResponseWriter, r *http.Reques
 	handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
-// ListSites operation middleware
-func (siw *ServerInterfaceWrapper) ListSites(w http.ResponseWriter, r *http.Request) {
+// UpdateSite operation middleware
+func (siw *ServerInterfaceWrapper) UpdateSite(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListSites(w, r)
+		siw.Handler.UpdateSite(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// ListGtexts operation middleware
+func (siw *ServerInterfaceWrapper) ListGtexts(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListGtexts(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// AddGtext operation middleware
+func (siw *ServerInterfaceWrapper) AddGtext(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddGtext(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// UpdateGtext operation middleware
+func (siw *ServerInterfaceWrapper) UpdateGtext(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateGtext(w, r)
+	}))
+
+	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
+		handler = siw.HandlerMiddlewares[i](handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// DelAny operation middleware
+func (siw *ServerInterfaceWrapper) DelAny(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "secretID" -------------
+	var secretID string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "secretID", chi.URLParam(r, "secretID"), &secretID, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "secretID", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DelAny(w, r, secretID)
 	}))
 
 	for i := len(siw.HandlerMiddlewares) - 1; i >= 0; i-- {
@@ -574,37 +690,49 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/auth/login", wrapper.Login)
+		r.Post(options.BaseURL+"/auth/login", wrapper.Login)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/auth/register", wrapper.CreateUser)
+		r.Post(options.BaseURL+"/auth/register", wrapper.CreateUser)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/user/card/add", wrapper.AddCard)
+		r.Get(options.BaseURL+"/user/card", wrapper.ListCards)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/user/card/list", wrapper.ListCards)
+		r.Post(options.BaseURL+"/user/card", wrapper.AddCard)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/user/file/add", wrapper.AddGfile)
+		r.Put(options.BaseURL+"/user/card", wrapper.UpdateCard)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/user/file/list", wrapper.ListGfiles)
+		r.Get(options.BaseURL+"/user/file", wrapper.ListGfiles)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/user/file/{fileID}", wrapper.GetGfile)
+		r.Post(options.BaseURL+"/user/file", wrapper.AddGfile)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/user/gtext/add", wrapper.AddGtext)
+		r.Get(options.BaseURL+"/user/file/{fileID}", wrapper.GetGfile)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/user/gtext/list", wrapper.ListGtexts)
+		r.Get(options.BaseURL+"/user/site", wrapper.ListSites)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/user/site/add", wrapper.AddSite)
+		r.Post(options.BaseURL+"/user/site", wrapper.AddSite)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/user/site/list", wrapper.ListSites)
+		r.Put(options.BaseURL+"/user/site", wrapper.UpdateSite)
+	})
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/user/text", wrapper.ListGtexts)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/user/text", wrapper.AddGtext)
+	})
+	r.Group(func(r chi.Router) {
+		r.Put(options.BaseURL+"/user/text", wrapper.UpdateGtext)
+	})
+	r.Group(func(r chi.Router) {
+		r.Delete(options.BaseURL+"/user/{secretID}", wrapper.DelAny)
 	})
 
 	return r
@@ -613,34 +741,36 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

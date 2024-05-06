@@ -12,7 +12,7 @@ info:
     name: Apache 2.0
     url: https://www.apache.org/licenses/LICENSE-2.0.html
 paths:
-  /api/auth/register:
+  /auth/register:
     post:
       summary: User registration
       description: Handler make new user ristration
@@ -40,7 +40,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /api/auth/login:
+  /auth/login:
     post:
       summary: User login
       description: Handler make existing user auth (login)
@@ -66,7 +66,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /api/user/site/add:
+  /user/site:
     post:
       summary: Add new site 
       description: Add new site credentials  - site, login and password.
@@ -100,7 +100,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /api/user/site/list:
     get:
       summary: get all users sites data 
       description: list site credentials  - site, login and password.
@@ -128,7 +127,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /api/user/card/add:
+    put:
+      summary: update site data by id
+      description: update site data in DB
+      operationId: UpdateSite
+      parameters:
+      requestBody:
+        description: Site add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Site'
+      responses:
+        '200':
+          description: site updated
+        '401':
+          description: User not authorized
+        '500':
+          description: Internal error site listing
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/card:
     post:
       summary: Add new debit card 
       description: Add new card data
@@ -162,7 +186,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /api/user/card/list:
     get:
       summary: get all users card data 
       description: list card credentials.
@@ -176,7 +199,32 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Card'
-  /api/user/gtext/add:
+    put:
+      summary: update card data by id
+      description: update card data in DB
+      operationId: UpdateCard
+      parameters:
+      requestBody:
+        description: Site add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Card'
+      responses:
+        '200':
+          description: card updated
+        '401':
+          description: User not authorized
+        '500':
+          description: Internal error site listing
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/text:
     post:
       summary: Add new text note
       description: Add new text note
@@ -210,7 +258,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /api/user/gtext/list:
     get:
       summary: get all users notes data 
       description: list notes.
@@ -238,7 +285,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /api/user/file/add:
+    put:
+      summary: update gtext data by id
+      description: update gtext data in DB
+      operationId: UpdateGtext
+      requestBody:
+        description: Site add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Gtext'
+      responses:
+        '200':
+          description: gtext updated
+        '401':
+          description: User not authorized
+        '500':
+          description: Internal error site listing
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /user/file:
     post:
       summary: Upload file 
       description: Upload file to s3
@@ -271,7 +343,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-  /api/user/file/list:
     get:
       summary: get all users files data 
       description: list files.
@@ -300,7 +371,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /api/user/file/{fileID}:
+  /user/file/{fileID}:
     get:
       summary: download file from storage by file ID
       description: file id is a secret id in DB, storage id - in minio
@@ -322,6 +393,32 @@ paths:
                 schema:
                   type: string
                   format: binary
+        '401':
+          description: User not authorized
+        '500':
+          description: Internal error site listing
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /user/{secretID}:
+    delete:
+      summary: delet ID
+      description: file id is a secret id in DB for data (Site, Card, Text)
+      operationId: DelAny
+      parameters:
+        - name: secretID
+          in: path
+          description: ID of file to return
+          required: true
+          schema:
+            type: string
+            format: string
+      responses:
+        '200':
+          description: file data
         '401':
           description: User not authorized
         '500':

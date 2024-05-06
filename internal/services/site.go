@@ -71,7 +71,7 @@ func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Load decoded data and decode binary data to oapi.Site.
-	var sites []oapi.Site
+	sites := make(map[string]oapi.Site, len(secretDecoded))
 	for _, secret := range secretDecoded {
 		var site oapi.Site
 		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&site)
@@ -81,7 +81,7 @@ func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		site.SiteID = secret.SecretID.String()
-		sites = append(sites, site)
+		sites[site.SiteID] = site
 	}
 
 	w.Header().Add("Content-Type", "application/json")
@@ -96,4 +96,38 @@ func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.S().Errorln("Can't write to response in ListSite handler", err)
 	}
+}
+
+// Site data update.
+func (k *Keeper) UpdateSite(w http.ResponseWriter, r *http.Request) {
+	// Check registration.
+	userID, isRegistered := CheckUserAuth(r.Context())
+	if !isRegistered {
+		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+		return
+	}
+	// Decode site credentials from JSON.
+	var site oapi.Site
+	if err := json.NewDecoder(r.Body).Decode(&site); err != nil {
+		sendKeeperError(w, http.StatusBadRequest, "Invalid format for NewSite")
+		return
+	}
+	// Write data to storage.
+	var db bytes.Buffer
+	err := gob.NewEncoder(&db).Encode(&site)
+	if err != nil {
+		zap.S().Errorln("Error coding site to data: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = k.UpdateSecret(r.Context(), userID, entities.SITE, db.Bytes(), site.SiteID)
+	if err != nil {
+		zap.S().Errorln("Error adding site to DB: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// set status code 200
+	w.WriteHeader(http.StatusOK)
 }
