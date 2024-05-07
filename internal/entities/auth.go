@@ -6,7 +6,6 @@ import "github.com/gofrs/uuid"
 type CtxPassKey struct{}
 
 // Send values through middleware in context.
-// TODO - move to middlewares, solve cycle import problem
 type AuthContext struct {
 	userID       uuid.UUID
 	isRegistered bool

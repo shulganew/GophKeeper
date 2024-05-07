@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/shulganew/GophKeeper/internal/api/jwt"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/api/router"
 	"github.com/shulganew/GophKeeper/internal/app"
@@ -45,10 +46,21 @@ func main() {
 	// that server names match. We don't know how this thing will be run.
 	swagger.Servers = nil
 
-	// Create router.
-	rt := router.RouteShear(conf, swagger)
+	key, err := jwt.GetPrivateKey(conf)
+	if err != nil {
+		zap.S().Fatalln(err)
+	}
 
-	keeper := services.NewKeeper(ctx, stor, fstor, conf)
+	// Create JWT authenticator.
+	auth, err := jwt.NewUserAuthenticator(key)
+	if err != nil {
+		zap.S().Fatalln(err)
+	}
+
+	// Create router.
+	rt := router.RouteShear(conf, swagger, auth)
+
+	keeper := services.NewKeeper(ctx, stor, fstor, conf, auth)
 
 	// We now register our GophKeeper above as the handler for the interface
 	oapi.HandlerFromMux(keeper, rt)

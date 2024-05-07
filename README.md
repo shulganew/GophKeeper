@@ -95,4 +95,18 @@ make pg-stop
 
 ## Git - remove file with git ignore, when it already added.
 git rm --cached internal/api/oapi/gokeeper.gen.go
-git reset internal/api/oapi/gokeeper.gen.go
+//git reset internal/api/oapi/gokeeper.gen.go
+
+## Curl tests
+
+
+## Private key for jwt token
+PrivateKey is an ECDSA private key which was generated with the following
+command:
+
+```bash
+openssl ecparam -name prime256v1 -genkey -noout -out cert/jwtpkey.pem
+```
+We are using a hard coded key here in this example, but in real applications,
+you would never do this. Your JWT signing key must never be in your application,
+only the public key.

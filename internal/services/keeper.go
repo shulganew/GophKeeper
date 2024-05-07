@@ -16,6 +16,7 @@ import (
 
 	"github.com/gofrs/uuid"
 	"github.com/minio/minio-go/v7"
+	"github.com/shulganew/GophKeeper/internal/api/jwt"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/app/config"
 	"github.com/shulganew/GophKeeper/internal/entities"
@@ -28,10 +29,11 @@ type Keeper struct {
 	fstor FileKeeper
 	conf  config.Config
 	eKeys []entities.EKeyMem // Decoded ephemeral keys.
+	ua    *jwt.UserAuthenticator
 }
 
-func NewKeeper(ctx context.Context, stor Keeperer, fstor FileKeeper, conf config.Config) *Keeper {
-	keeper := &Keeper{stor: stor, fstor: fstor, conf: conf, eKeys: []entities.EKeyMem{}}
+func NewKeeper(ctx context.Context, stor Keeperer, fstor FileKeeper, conf config.Config, ua *jwt.UserAuthenticator) *Keeper {
+	keeper := &Keeper{stor: stor, fstor: fstor, conf: conf, eKeys: []entities.EKeyMem{}, ua: ua}
 	// Load eKeys.
 	keeper.LoadKeyRing(ctx)
 	return keeper

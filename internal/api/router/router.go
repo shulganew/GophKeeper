@@ -1,33 +1,26 @@
 package router
 
 import (
-	"context"
-	"net/http"
-
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/go-chi/chi/v5"
 	middleware "github.com/oapi-codegen/nethttp-middleware"
-	"github.com/shulganew/GophKeeper/internal/api/middlewares"
+	"github.com/shulganew/GophKeeper/internal/api/jwt"
 	"github.com/shulganew/GophKeeper/internal/app/config"
-	"github.com/shulganew/GophKeeper/internal/entities"
 )
 
 // Chi Router for application.
-func RouteShear(conf config.Config, swagger *openapi3.T) (r *chi.Mux) {
+func RouteShear(conf config.Config, swagger *openapi3.T, v jwt.JWSValidator) (r *chi.Mux) {
 	r = chi.NewRouter()
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
 
-	// Send password for enctription to middlewares.
-	r.Use(func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), entities.CtxPassKey{}, conf.PassJWT)
-			h.ServeHTTP(w, r.WithContext(ctx))
-		})
-	})
-	r.Use(middlewares.MidlewZip)
-	r.Use(middlewares.Auth)
-	r.Use(middleware.OapiRequestValidator(swagger))
+	r.Use(middleware.OapiRequestValidatorWithOptions(swagger,
+		&middleware.Options{
+			Options: openapi3filter.Options{
+				AuthenticationFunc: jwt.NewAuthenticator(v),
+			},
+		}))
 
 	return
 }

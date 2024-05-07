@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/shulganew/GophKeeper/internal/api/jwt"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/entities"
 	"go.uber.org/zap"
@@ -13,10 +14,11 @@ import (
 
 // Add new card.
 func (k *Keeper) AddCard(w http.ResponseWriter, r *http.Request) {
-	// Check registration.
-	userID, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+	// Get userID from jwt.
+	userID, err := jwt.GetUserID(k.ua, r)
+	if err != nil {
+		zap.S().Errorln("Error getting userID: ", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 	// Decode Card credentials from JSON.
@@ -27,7 +29,7 @@ func (k *Keeper) AddCard(w http.ResponseWriter, r *http.Request) {
 	}
 	// Write data to storage.
 	var db bytes.Buffer
-	err := gob.NewEncoder(&db).Encode(&newCard)
+	err = gob.NewEncoder(&db).Encode(&newCard)
 	if err != nil {
 		zap.S().Errorln("Error coding card to data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -56,10 +58,11 @@ func (k *Keeper) AddCard(w http.ResponseWriter, r *http.Request) {
 
 // List all created cards.
 func (k *Keeper) ListCards(w http.ResponseWriter, r *http.Request) {
-	// Check registration.
-	userID, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+	// Get userID from jwt.
+	userID, err := jwt.GetUserID(k.ua, r)
+	if err != nil {
+		zap.S().Errorln("Error getting userID: ", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -100,12 +103,14 @@ func (k *Keeper) ListCards(w http.ResponseWriter, r *http.Request) {
 }
 
 func (k *Keeper) UpdateCard(w http.ResponseWriter, r *http.Request) {
-	// Check registration.
-	userID, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+	// Get userID from jwt.
+	userID, err := jwt.GetUserID(k.ua, r)
+	if err != nil {
+		zap.S().Errorln("Error getting userID: ", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
+
 	// Decode gtext credentials from JSON.
 	var gtext oapi.Card
 	if err := json.NewDecoder(r.Body).Decode(&gtext); err != nil {
@@ -114,7 +119,7 @@ func (k *Keeper) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	}
 	// Write data to storage.
 	var db bytes.Buffer
-	err := gob.NewEncoder(&db).Encode(&gtext)
+	err = gob.NewEncoder(&db).Encode(&gtext)
 	if err != nil {
 		zap.S().Errorln("Error coding site to data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -134,13 +139,6 @@ func (k *Keeper) UpdateCard(w http.ResponseWriter, r *http.Request) {
 
 // Delelete card data
 func (k *Keeper) DelCard(w http.ResponseWriter, r *http.Request, cardID string) {
-	// Check registration.
-	_, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
-		return
-	}
-
 	err := k.DeleteSecret(r.Context(), cardID)
 	if err != nil {
 		zap.S().Errorln("Error adding site to DB: ", err)

@@ -20,7 +20,7 @@ type Config struct {
 	// dsn connection string
 	DSN string
 
-	PassJWT string
+	PathJWT string
 
 	MasterKey string // Master password for GophKeeper storage.
 }
@@ -30,7 +30,7 @@ func InitConfig() Config {
 	// read command line argue
 	serverAddress := flag.String("a", "localhost:8443", "Service GKeeper address")
 	dsnf := flag.String("d", "", "Data Source Name for DataBase connection")
-	authJWT := flag.String("p", "JWTsecret", "JWT private key")
+	jwtPath := flag.String("p", "cert/jwtpkey.pem", "path to JWT private key file, ex cert/jwtpkey.pem")
 	master := flag.String("m", "MasterKey", "Master password for GophKeeper storage")
 	flag.Parse()
 
@@ -44,7 +44,7 @@ func InitConfig() Config {
 	addr, exist := os.LookupEnv(("RUN_ADDRESS"))
 
 	// JWT password for users auth.
-	config.PassJWT = *authJWT
+	config.PathJWT = *jwtPath
 
 	// Master pass.
 	config.MasterKey = *master

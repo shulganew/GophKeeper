@@ -6,17 +6,17 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/gofrs/uuid"
 	"github.com/golang/mock/gomock"
-	middleware "github.com/oapi-codegen/nethttp-middleware"
 	"github.com/oapi-codegen/testutil"
-	"github.com/shulganew/GophKeeper/internal/api/middlewares"
+	"github.com/shulganew/GophKeeper/internal/api/jwt"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
+	"github.com/shulganew/GophKeeper/internal/api/router"
 	"github.com/shulganew/GophKeeper/internal/app"
 	"github.com/shulganew/GophKeeper/internal/app/config"
 	"github.com/shulganew/GophKeeper/internal/entities"
 	"github.com/shulganew/GophKeeper/internal/services/mocks"
+	"go.uber.org/zap"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,7 +32,7 @@ func TestUser(t *testing.T) {
 		{
 			name:       "Check user registration",
 			method:     http.MethodPost,
-			requestAdd: "/api/auth/register",
+			requestAdd: "/auth/register",
 		},
 	}
 
@@ -43,9 +43,10 @@ func TestUser(t *testing.T) {
 
 	// Init application
 	conf.Address = "localhost:8088"
-	conf.PassJWT = "JWTsecret"
+	conf.PathJWT = "JWTsecret"
 	conf.MasterKey = "MasterPw"
 	conf.DSN = ""
+	conf.PathJWT = "cert/jwtpkey.pem"
 	// init mock.
 
 	ctrl := gomock.NewController(t)
@@ -65,7 +66,11 @@ func TestUser(t *testing.T) {
 		AnyTimes().
 		Return(nil)
 
-	keeper := NewKeeper(ctx, repo, nil, *conf)
+	// Create JWT authenticator.
+	auth, err := jwt.NewUserAuthenticator([]byte(JWTPemKey))
+	if err != nil {
+		zap.S().Fatalln(err)
+	}
 
 	// Init web.
 	// Get the swagger description of our API
@@ -77,20 +82,12 @@ func TestUser(t *testing.T) {
 	swagger.Servers = nil
 
 	// Create router.
-	r := chi.NewRouter()
+	rt := router.RouteShear(*conf, swagger, auth)
 
-	// Send password for enctription to middlewares.
-	r.Use(func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), entities.CtxPassKey{}, conf.PassJWT)
-			h.ServeHTTP(w, r.WithContext(ctx))
-		})
-	})
-	r.Use(middlewares.Auth)
-	r.Use(middleware.OapiRequestValidator(swagger))
+	keeper := NewKeeper(ctx, repo, nil, *conf, auth)
 
 	// We now register our GophKeeper above as the handler for the interface
-	oapi.HandlerFromMux(keeper, r)
+	oapi.HandlerFromMux(keeper, rt)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -112,9 +109,8 @@ func TestUser(t *testing.T) {
 			assert.NoError(t, err)
 
 			// Create request.
-			rr := testutil.NewRequest().Post(tt.requestAdd).WithContentType("application/json").WithBody(jsonSite).GoWithHTTPHandler(t, r).Recorder
+			rr := testutil.NewRequest().Post(tt.requestAdd).WithContentType("application/json").WithBody(jsonSite).GoWithHTTPHandler(t, rt).Recorder
 			assert.Equal(t, http.StatusCreated, rr.Code)
-
 		})
 	}
 }

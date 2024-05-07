@@ -16,6 +16,7 @@ paths:
     post:
       summary: User registration
       description: Handler make new user ristration
+      security: []
       operationId: CreateUser
       parameters:
       requestBody:
@@ -44,6 +45,7 @@ paths:
     post:
       summary: User login
       description: Handler make existing user auth (login)
+      security: []
       operationId: Login
       parameters:
       requestBody:
@@ -576,3 +578,10 @@ components:
         message:
           type: string
           description: Error message
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - BearerAuth: []

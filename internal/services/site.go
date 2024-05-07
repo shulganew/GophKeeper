@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/shulganew/GophKeeper/internal/api/jwt"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/entities"
 	"go.uber.org/zap"
@@ -13,13 +14,14 @@ import (
 
 // Add new site credentials: site, login and password.
 func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
-	// Check registration.
-	userID, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+	// Get userID from jwt.
+	userID, err := jwt.GetUserID(k.ua, r)
+	if err != nil {
+		zap.S().Errorln("Error getting userID: ", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
-	// Decode Site credentials from JSON.
+
 	var newSite oapi.NewSite
 	if err := json.NewDecoder(r.Body).Decode(&newSite); err != nil {
 		sendKeeperError(w, http.StatusBadRequest, "Invalid format for NewSite")
@@ -27,7 +29,7 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 	}
 	// Write data to storage.
 	var db bytes.Buffer
-	err := gob.NewEncoder(&db).Encode(&newSite)
+	err = gob.NewEncoder(&db).Encode(&newSite)
 	if err != nil {
 		zap.S().Errorln("Error coding site to data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -55,10 +57,11 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 
 // List all users sites with credentials.
 func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
-	// Check registration.
-	userID, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+	// Get userID from jwt.
+	userID, err := jwt.GetUserID(k.ua, r)
+	if err != nil {
+		zap.S().Errorln("Error getting userID: ", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -100,10 +103,11 @@ func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
 
 // Site data update.
 func (k *Keeper) UpdateSite(w http.ResponseWriter, r *http.Request) {
-	// Check registration.
-	userID, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+	// Get userID from jwt.
+	userID, err := jwt.GetUserID(k.ua, r)
+	if err != nil {
+		zap.S().Errorln("Error getting userID: ", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 	// Decode site credentials from JSON.
@@ -114,7 +118,7 @@ func (k *Keeper) UpdateSite(w http.ResponseWriter, r *http.Request) {
 	}
 	// Write data to storage.
 	var db bytes.Buffer
-	err := gob.NewEncoder(&db).Encode(&site)
+	err = gob.NewEncoder(&db).Encode(&site)
 	if err != nil {
 		zap.S().Errorln("Error coding site to data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

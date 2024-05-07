@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/shulganew/GophKeeper/internal/api/jwt"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/entities"
 	"go.uber.org/zap"
@@ -13,12 +14,14 @@ import (
 
 // Add new Gtext.
 func (k *Keeper) AddGtext(w http.ResponseWriter, r *http.Request) {
-	// Check registration.
-	userID, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+	// Get userID from jwt.
+	userID, err := jwt.GetUserID(k.ua, r)
+	if err != nil {
+		zap.S().Errorln("Error getting userID: ", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
+
 	// Decode Gtext credentials from JSON.
 	var newGtext oapi.NewGtext
 	if err := json.NewDecoder(r.Body).Decode(&newGtext); err != nil {
@@ -27,7 +30,7 @@ func (k *Keeper) AddGtext(w http.ResponseWriter, r *http.Request) {
 	}
 	// Write data to storage.
 	var db bytes.Buffer
-	err := gob.NewEncoder(&db).Encode(&newGtext)
+	err = gob.NewEncoder(&db).Encode(&newGtext)
 	if err != nil {
 		zap.S().Errorln("Error coding Gtext to data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -56,10 +59,11 @@ func (k *Keeper) AddGtext(w http.ResponseWriter, r *http.Request) {
 
 // List all created Gtexts.
 func (k *Keeper) ListGtexts(w http.ResponseWriter, r *http.Request) {
-	// Check registration.
-	userID, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+	// Get userID from jwt.
+	userID, err := jwt.GetUserID(k.ua, r)
+	if err != nil {
+		zap.S().Errorln("Error getting userID: ", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -100,12 +104,14 @@ func (k *Keeper) ListGtexts(w http.ResponseWriter, r *http.Request) {
 }
 
 func (k *Keeper) UpdateGtext(w http.ResponseWriter, r *http.Request) {
-	// Check registration.
-	userID, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+	// Get userID from jwt.
+	userID, err := jwt.GetUserID(k.ua, r)
+	if err != nil {
+		zap.S().Errorln("Error getting userID: ", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
+
 	// Decode gtext credentials from JSON.
 	var gtext oapi.Gtext
 	if err := json.NewDecoder(r.Body).Decode(&gtext); err != nil {
@@ -114,7 +120,7 @@ func (k *Keeper) UpdateGtext(w http.ResponseWriter, r *http.Request) {
 	}
 	// Write data to storage.
 	var db bytes.Buffer
-	err := gob.NewEncoder(&db).Encode(&gtext)
+	err = gob.NewEncoder(&db).Encode(&gtext)
 	if err != nil {
 		zap.S().Errorln("Error coding site to data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

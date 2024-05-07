@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	"github.com/gofrs/uuid"
+	"github.com/shulganew/GophKeeper/internal/api/jwt"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/entities"
 	"go.uber.org/zap"
@@ -21,10 +22,11 @@ const PreambleLeth = 8
 // 1. Uplod file and return created file id in minio storage.
 // 2. Create file metadata as sectet in db with users description (definition field and file_id)
 func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
-	// Check registration.
-	userID, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+	// Get userID from jwt.
+	userID, err := jwt.GetUserID(k.ua, r)
+	if err != nil {
+		zap.S().Errorln("Error getting userID: ", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -32,7 +34,7 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 	fr := r.Body
 	// Get preablule with lenth of metadata
 	preamble := make([]byte, PreambleLeth)
-	_, err := fr.Read(preamble)
+	_, err = fr.Read(preamble)
 	if err != nil {
 		http.Error(w, "Can't Read preambule.", http.StatusInternalServerError)
 	}
@@ -109,11 +111,11 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 
 // Return add gfiles metadata from DB.
 func (k *Keeper) ListGfiles(w http.ResponseWriter, r *http.Request) {
-
-	// Check registration.
-	userID, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+	// Get userID from jwt.
+	userID, err := jwt.GetUserID(k.ua, r)
+	if err != nil {
+		zap.S().Errorln("Error getting userID: ", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
@@ -156,14 +158,16 @@ func (k *Keeper) ListGfiles(w http.ResponseWriter, r *http.Request) {
 
 // Return gfile from storage. fileID == secretID (+) entities.FILE
 func (k *Keeper) GetGfile(w http.ResponseWriter, r *http.Request, fileID string) {
-	// Check registration.
-	userID, isRegistered := CheckUserAuth(r.Context())
-	if !isRegistered {
-		http.Error(w, "JWT not found. Not authorized.", http.StatusUnauthorized)
+	// Get userID from jwt.
+	userID, err := jwt.GetUserID(k.ua, r)
+	if err != nil {
+		zap.S().Errorln("Error getting userID: ", err)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
+
 	zap.S().Debugln("File id:", fileID)
-	_, err := uuid.FromString(fileID)
+	_, err = uuid.FromString(fileID)
 	if err != nil {
 		zap.S().Errorln("file ID not correct: ", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)

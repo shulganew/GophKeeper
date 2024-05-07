@@ -1,7 +1,6 @@
 package services
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,10 +8,8 @@ import (
 
 	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
-	"github.com/shulganew/GophKeeper/internal/api/middlewares"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/app/config"
-	"github.com/shulganew/GophKeeper/internal/entities"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -49,9 +46,16 @@ func (k *Keeper) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwt, _ := middlewares.BuildJWTString(*userID, k.conf.PassJWT)
+	// Create jwt with access to all permissions.
+	allowAll, err := k.ua.CreateJWSWithClaims(userID.String(), []string{})
+	if err != nil {
+		zap.S().Errorln("Error creating jwt string: ", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	w.Header().Add("Content-Type", "text/plain")
-	w.Header().Add("Authorization", config.AuthPrefix+jwt)
+	w.Header().Add("Authorization", config.AuthPrefix+string(allowAll))
 
 	// set status code 201
 	w.WriteHeader(http.StatusCreated)
@@ -87,11 +91,16 @@ func (k *Keeper) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Wrong login or password", http.StatusUnauthorized)
 	}
 
-	zap.S().Debug("Login sucsess, user id is: ", dbUser.UUID)
-	jwt, _ := middlewares.BuildJWTString(dbUser.UUID, k.conf.PassJWT)
+	// Create jwt with access to all permissions.
+	allowAll, err := k.ua.CreateJWSWithClaims(dbUser.UUID.String(), []string{})
+	if err != nil {
+		zap.S().Errorln("Error creating jwt string: ", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	w.Header().Add("Content-Type", "text/plain")
-	w.Header().Add("Authorization", config.AuthPrefix+jwt)
+	w.Header().Add("Authorization", config.AuthPrefix+string(allowAll))
 
 	// set status code 200
 	w.WriteHeader(http.StatusOK)
@@ -114,11 +123,4 @@ func (k Keeper) HashPassword(password string) (string, error) {
 // CheckPassword checks if the provided password is correct or not.
 func (k Keeper) CheckPassword(password string, hashedPassword string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-}
-
-// Check if contex has JWT valid user token from auth middleware.
-func CheckUserAuth(ctx context.Context) (userID string, isRegistered bool) {
-	auth := ctx.Value(entities.AuthContext{}).(entities.AuthContext)
-	zap.S().Debugf("UserID: %s, JWT: %s, is registered: %t \n", auth.GetUserID(), auth.GetUserJWT(), auth.IsRegistered)
-	return auth.GetUserID().String(), auth.IsRegistered()
 }
