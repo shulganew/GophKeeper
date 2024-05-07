@@ -10,10 +10,9 @@ type FileRepo struct {
 	mio *minio.Client
 }
 
-func NewFileRepo(ctx context.Context, mio *minio.Client) (*FileRepo, error) {
+func NewFileRepo(ctx context.Context, backet string, mio *minio.Client) (*FileRepo, error) {
 	fr := FileRepo{mio: mio}
-	// TODO add confilt param.
-	_, err := fr.mio.BucketExists(ctx, "gohpkeeper")
+	_, err := fr.mio.BucketExists(ctx, backet)
 	if err != nil {
 		return nil, err
 	}

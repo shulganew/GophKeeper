@@ -89,7 +89,7 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Upload file to minio
-	err = k.fstor.UploadFile(r.Context(), gfileID.String(), bytes.NewBuffer(dataFc))
+	err = k.fstor.UploadFile(r.Context(), k.conf.Backet, gfileID.String(), bytes.NewBuffer(dataFc))
 	if err != nil {
 		zap.S().Errorln("Can't upload: ", err)
 		http.Error(w, "Can't upload file fo s3.", http.StatusInternalServerError)
@@ -197,7 +197,7 @@ func (k *Keeper) GetGfile(w http.ResponseWriter, r *http.Request, fileID string)
 	}
 
 	gfile.GfileID = secretDecoded.SecretID.String()
-	fr, err := k.fstor.DownloadFile(r.Context(), gfile.GfileID)
+	fr, err := k.fstor.DownloadFile(r.Context(), k.conf.Backet, gfile.GfileID)
 	if err != nil {
 		zap.S().Errorln("Can't Download: ", err)
 		http.Error(w, "Can't Download.", http.StatusInternalServerError)

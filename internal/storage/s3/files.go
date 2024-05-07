@@ -10,10 +10,10 @@ import (
 )
 
 // Updload file to MINIO storage.
-func (r *FileRepo) UploadFile(ctx context.Context, fileID string, fr io.Reader) (err error) {
+func (r *FileRepo) UploadFile(ctx context.Context, backet string, fileID string, fr io.Reader) (err error) {
 	zap.S().Debugln("Key Upload: ", fileID)
 	// Put object to minio.
-	_, err = r.mio.PutObject(ctx, "gohpkeeper", fileID, fr, int64(-1), minio.PutObjectOptions{ContentType: "application/octet-stream"})
+	_, err = r.mio.PutObject(ctx, backet, fileID, fr, int64(-1), minio.PutObjectOptions{ContentType: "application/octet-stream"})
 	if err != nil {
 		return fmt.Errorf("upload file to MIO problem: %w", err)
 	}
@@ -21,10 +21,10 @@ func (r *FileRepo) UploadFile(ctx context.Context, fileID string, fr io.Reader) 
 }
 
 // Download file from MINIO storage.
-func (r *FileRepo) DownloadFile(ctx context.Context, fileID string) (fr *minio.Object, err error) {
+func (r *FileRepo) DownloadFile(ctx context.Context, backet string, fileID string) (fr *minio.Object, err error) {
 	// Put object to minio.
 	zap.S().Debugln("Key Download: ", fileID)
-	fr, err = r.mio.GetObject(ctx, "gohpkeeper", fileID, minio.GetObjectOptions{})
+	fr, err = r.mio.GetObject(ctx, backet, fileID, minio.GetObjectOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("downlad file to MIO problem: %w", err)
 	}

@@ -23,6 +23,8 @@ type Config struct {
 	PathJWT string
 
 	MasterKey string // Master password for GophKeeper storage.
+
+	Backet string // MINIO backet
 }
 
 func InitConfig() Config {
@@ -32,6 +34,8 @@ func InitConfig() Config {
 	dsnf := flag.String("d", "", "Data Source Name for DataBase connection")
 	jwtPath := flag.String("p", "cert/jwtpkey.pem", "path to JWT private key file, ex cert/jwtpkey.pem")
 	master := flag.String("m", "MasterKey", "Master password for GophKeeper storage")
+	mb := flag.String("b", "gohpkeeper", "MINIO backet for files")
+
 	flag.Parse()
 
 	// Check and parse URL.
@@ -48,6 +52,9 @@ func InitConfig() Config {
 
 	// Master pass.
 	config.MasterKey = *master
+
+	// MINIO.
+	config.Backet = *mb
 
 	// if env var does not exist  - set def value
 	if exist {

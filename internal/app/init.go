@@ -70,7 +70,7 @@ func InitMinIO(ctx context.Context, conf config.Config) (fstor *s3.FileRepo, err
 		return nil, err
 	}
 	// Load file storage.
-	fstor, err = s3.NewFileRepo(ctx, mio)
+	fstor, err = s3.NewFileRepo(ctx, conf.Backet, mio)
 	if err != nil {
 		return nil, err
 	}
