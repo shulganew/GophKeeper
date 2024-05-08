@@ -62,7 +62,7 @@ func main() {
 
 	keeper := services.NewKeeper(ctx, stor, fstor, conf, auth)
 
-	// We now register our GophKeeper above as the handler for the interface
+	// We now register our GophKeeper above as the handler for the interface.
 	oapi.HandlerFromMux(keeper, rt)
 
 	// Start web server.

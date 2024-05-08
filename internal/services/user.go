@@ -69,15 +69,15 @@ func (k *Keeper) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 // Validate user in Keeper, if sucsess it return user's id.
 func (k *Keeper) Login(w http.ResponseWriter, r *http.Request) {
-	var oapiUser oapi.NewUser
-	if err := json.NewDecoder(r.Body).Decode(&oapiUser); err != nil {
+	var nuser oapi.NewUser
+	if err := json.NewDecoder(r.Body).Decode(&nuser); err != nil {
 		// If can't decode 400
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// Get User from storage
-	dbUser, err := k.stor.GetByLogin(r.Context(), oapiUser.Login)
+	dbUser, err := k.stor.GetByLogin(r.Context(), nuser.Login)
 	zap.S().Infof("User form db: %v \n", dbUser)
 	if err != nil {
 		zap.S().Infoln("User not found by login. ", err)
@@ -86,13 +86,18 @@ func (k *Keeper) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check pass is correct
-	err = k.CheckPassword(oapiUser.Password, dbUser.PassHash)
+	err = k.CheckPassword(nuser.Password, dbUser.PassHash)
 	if err != nil {
 		http.Error(w, "Wrong login or password", http.StatusUnauthorized)
 	}
 
-	// Create jwt with access to all permissions.
-	allowAll, err := k.ua.CreateJWSWithClaims(dbUser.UUID.String(), []string{})
+	// Create jwt with access.
+	// For user with login = admin grand rigts to admin handlers
+	access := ""
+	if nuser.Login == "admin" {
+		access = "admin"
+	}
+	allowAll, err := k.ua.CreateJWSWithClaims(dbUser.UUID.String(), []string{access})
 	if err != nil {
 		zap.S().Errorln("Error creating jwt string: ", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)

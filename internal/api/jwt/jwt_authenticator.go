@@ -89,6 +89,7 @@ func Authenticate(v JWSValidator, ctx context.Context, input *openapi3filter.Aut
 
 	// We've got a valid token now, and we can look into its claims to see whether
 	// they match. Every single scope must be present in the claims.
+
 	err = CheckTokenClaims(input.Scopes, token)
 
 	if err != nil {
@@ -139,7 +140,6 @@ func CheckTokenClaims(expectedClaims []string, t jwt.Token) error {
 	for _, c := range claims {
 		claimsMap[c] = true
 	}
-
 	for _, e := range expectedClaims {
 		if !claimsMap[e] {
 			return errors.New("provided claims do not match expected scopes")

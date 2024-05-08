@@ -54,6 +54,7 @@ type Keeperer interface {
 	SaveEKeysc(ctx context.Context, eKeysc []entities.EKeyDB) (err error) // Many keys
 	SaveEKeyc(ctx context.Context, eKeyc entities.EKeyDB) (err error)     // One key
 	LoadEKeysc(ctx context.Context) (eKeysc []entities.EKeyDB, err error)
+	DropKeys(ctx context.Context) (err error)
 }
 
 type FileKeeper interface {

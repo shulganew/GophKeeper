@@ -82,6 +82,20 @@ func (mr *MockKeepererMockRecorder) DeleteSecretStor(ctx, secretID interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteSecretStor", reflect.TypeOf((*MockKeeperer)(nil).DeleteSecretStor), ctx, secretID)
 }
 
+// DropKeys mocks base method.
+func (m *MockKeeperer) DropKeys(ctx context.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DropKeys", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DropKeys indicates an expected call of DropKeys.
+func (mr *MockKeepererMockRecorder) DropKeys(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DropKeys", reflect.TypeOf((*MockKeeperer)(nil).DropKeys), ctx)
+}
+
 // GetByLogin mocks base method.
 func (m *MockKeeperer) GetByLogin(ctx context.Context, login string) (*entities.User, error) {
 	m.ctrl.T.Helper()
@@ -208,30 +222,30 @@ func (m *MockFileKeeper) EXPECT() *MockFileKeeperMockRecorder {
 }
 
 // DownloadFile mocks base method.
-func (m *MockFileKeeper) DownloadFile(ctx context.Context, fileID string) (*minio.Object, error) {
+func (m *MockFileKeeper) DownloadFile(ctx context.Context, backet, fileID string) (*minio.Object, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DownloadFile", ctx, fileID)
+	ret := m.ctrl.Call(m, "DownloadFile", ctx, backet, fileID)
 	ret0, _ := ret[0].(*minio.Object)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DownloadFile indicates an expected call of DownloadFile.
-func (mr *MockFileKeeperMockRecorder) DownloadFile(ctx, fileID interface{}) *gomock.Call {
+func (mr *MockFileKeeperMockRecorder) DownloadFile(ctx, backet, fileID interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadFile", reflect.TypeOf((*MockFileKeeper)(nil).DownloadFile), ctx, fileID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DownloadFile", reflect.TypeOf((*MockFileKeeper)(nil).DownloadFile), ctx, backet, fileID)
 }
 
 // UploadFile mocks base method.
-func (m *MockFileKeeper) UploadFile(ctx context.Context, fileID string, fr io.Reader) error {
+func (m *MockFileKeeper) UploadFile(ctx context.Context, backet, fileID string, fr io.Reader) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UploadFile", ctx, fileID, fr)
+	ret := m.ctrl.Call(m, "UploadFile", ctx, backet, fileID, fr)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UploadFile indicates an expected call of UploadFile.
-func (mr *MockFileKeeperMockRecorder) UploadFile(ctx, fileID, fr interface{}) *gomock.Call {
+func (mr *MockFileKeeperMockRecorder) UploadFile(ctx, backet, fileID, fr interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadFile", reflect.TypeOf((*MockFileKeeper)(nil).UploadFile), ctx, fileID, fr)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadFile", reflect.TypeOf((*MockFileKeeper)(nil).UploadFile), ctx, backet, fileID, fr)
 }

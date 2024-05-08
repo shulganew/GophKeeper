@@ -32,6 +32,7 @@ func (k *Keeper) GetActualEKey() (eKey entities.EKeyMem) {
 func (k *Keeper) GetEKey(ts time.Time) (eKey entities.EKeyMem) {
 	id := slices.IndexFunc(k.eKeys, func(key entities.EKeyMem) bool { return key.TS.Equal(ts) })
 	if id != -1 {
+		zap.S().Debugln("Get eKey: ", k.eKeys[id].TS)
 		return k.eKeys[id]
 	}
 	return
@@ -63,7 +64,8 @@ func (k *Keeper) LoadKeyRing(ctx context.Context) {
 		// Decode keys using master key.
 		eKey, err := DecodeKey(eKeyc.EKeyc, []byte(k.conf.MasterKey))
 		if err != nil {
-			zap.S().Errorln("Error Decode eKeys: ", err)
+			//
+			zap.S().Fatalln("Master key not valid. Exit. ", err)
 		}
 		eKeys = append(eKeys, entities.EKeyMem{TS: eKeyc.TS, EKey: eKey})
 	}
@@ -81,6 +83,31 @@ func (k *Keeper) SaveKeyRing(ctx context.Context, eKey entities.EKeyMem) {
 	}
 	// Save to database coded key.
 	err = k.stor.SaveEKeyc(ctx, entities.EKeyDB{TS: eKey.TS, EKeyc: eKeyc})
+	if err != nil {
+		zap.S().Errorln("Error save eKeyc to DB: ", err)
+	}
+}
+
+// Save all eKeys from mem to storage.
+func (k *Keeper) SaveKeysRing(ctx context.Context) {
+	for _, eKey := range k.eKeys {
+		// Encode keys using master key.
+		eKeyc, err := EncodeKey(eKey.EKey, []byte(k.conf.MasterKey))
+		if err != nil {
+			zap.S().Errorln("Error Encoding eKey: ", err)
+		}
+		// Save to database coded key.
+		err = k.stor.SaveEKeyc(ctx, entities.EKeyDB{TS: eKey.TS, EKeyc: eKeyc})
+		if err != nil {
+			zap.S().Errorln("Error save eKeyc to DB: ", err)
+		}
+	}
+}
+
+// Drop  database with eKeys.
+func (k *Keeper) DropKeyRing(ctx context.Context) {
+	// Drop keys
+	err := k.stor.DropKeys(ctx)
 	if err != nil {
 		zap.S().Errorln("Error save eKeyc to DB: ", err)
 	}

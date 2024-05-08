@@ -1,6 +1,5 @@
 package pg
 
-
 import (
 	"context"
 	"fmt"
@@ -18,9 +17,20 @@ func (r *Repo) SaveEKeysc(ctx context.Context, eKeysc []entities.EKeyDB) (err er
 	return
 }
 
+// Save to storage ephemeral encoded key.
 func (r *Repo) SaveEKeyc(ctx context.Context, eKeyc entities.EKeyDB) (err error) {
 	query := `INSERT INTO ekeys (ts, ekeyc) VALUES ($1, $2) ON CONFLICT DO NOTHING`
 	_, err = r.db.ExecContext(ctx, query, eKeyc.TS, eKeyc.EKeyc)
+	if err != nil {
+		return fmt.Errorf("db error during saving key eKeyc, error: %w", err)
+	}
+	return
+}
+
+// Drop eKeyc in storage
+func (r *Repo) DropKeys(ctx context.Context) (err error) {
+	query := `Delete from ekeys`
+	_, err = r.db.ExecContext(ctx, query)
 	if err != nil {
 		return fmt.Errorf("db error during saving key eKeyc, error: %w", err)
 	}
@@ -37,4 +47,3 @@ func (r *Repo) LoadEKeysc(ctx context.Context) (eKeysc []entities.EKeyDB, err er
 	}
 	return
 }
-

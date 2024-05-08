@@ -33,7 +33,7 @@ func InitConfig() Config {
 	serverAddress := flag.String("a", "localhost:8443", "Service GKeeper address")
 	dsnf := flag.String("d", "", "Data Source Name for DataBase connection")
 	jwtPath := flag.String("p", "cert/jwtpkey.pem", "path to JWT private key file, ex cert/jwtpkey.pem")
-	master := flag.String("m", "MasterKey", "Master password for GophKeeper storage")
+	master := flag.String("m", "1NewMasterKey", "Master password for GophKeeper storage")
 	mb := flag.String("b", "gohpkeeper", "MINIO backet for files")
 
 	flag.Parse()

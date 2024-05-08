@@ -431,6 +431,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /admin/key:
+    put:
+      summary: make eKey
+      description: admin handler for generatin new ephemeral key
+      security:
+        - BearerAuth:
+            - "admin"
+      operationId: EKeyNew
+      responses:
+        '201':
+          description: new key created
+        '401':
+          description: User not authorized or not admin auth
+        '500':
+          description: Internal error site listing
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /admin/master:
+    post:
+      summary: change master key from old key to new key
+      description: 
+      security:
+        - BearerAuth:
+            - "admin"
+      requestBody:
+        description: Site add to the store
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Key'
+      operationId: NewMaster
+      responses:
+        '201':
+          description: new master key created
+        '401':
+          description: User not authorized or not admin auth
+        '500':
+          description: Internal error site listing
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 components:
   schemas:
     User:
@@ -566,6 +615,19 @@ components:
           type: string
           format: string
           description: File name on the user's side
+    Key:
+      required:
+        - old
+        - new
+      properties:
+        old:
+          type: string
+          format: string
+          description: old master key
+        new:
+          type: string
+          format: string
+          description: new master key
     Error:
       required:
         - code

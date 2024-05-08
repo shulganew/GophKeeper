@@ -11,16 +11,14 @@ import (
 
 // Chi Router for application.
 func RouteShear(conf config.Config, swagger *openapi3.T, v jwt.JWSValidator) (r *chi.Mux) {
-	r = chi.NewRouter()
+	r = chi.NewMux()
 	// Use our validation middleware to check all requests against the
 	// OpenAPI schema.
-
 	r.Use(middleware.OapiRequestValidatorWithOptions(swagger,
 		&middleware.Options{
 			Options: openapi3filter.Options{
 				AuthenticationFunc: jwt.NewAuthenticator(v),
 			},
 		}))
-
 	return
 }
