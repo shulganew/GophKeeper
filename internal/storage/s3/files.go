@@ -21,7 +21,7 @@ func (r *FileRepo) UploadFile(ctx context.Context, backet string, fileID string,
 }
 
 // Download file from MINIO storage.
-func (r *FileRepo) DownloadFile(ctx context.Context, backet string, fileID string) (fr *minio.Object, err error) {
+func (r *FileRepo) DownloadFile(ctx context.Context, backet string, fileID string) (fr io.ReadCloser, err error) {
 	// Put object to minio.
 	zap.S().Debugln("Key Download: ", fileID)
 	fr, err = r.mio.GetObject(ctx, backet, fileID, minio.GetObjectOptions{})

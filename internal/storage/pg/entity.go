@@ -9,8 +9,7 @@ import (
 	"github.com/shulganew/GophKeeper/internal/entities"
 )
 
-// TODO add UNICQUE siteURL+login with error duplicated.
-
+// Save sectet to storage.
 func (r *Repo) AddSecretStor(ctx context.Context, entity entities.NewSecretEncoded, stype entities.SecretType) (secretID *uuid.UUID, err error) {
 	query := `
 	INSERT INTO secrets (user_id, type, data, ekey_version, dkey, uploaded) 
@@ -25,7 +24,7 @@ func (r *Repo) AddSecretStor(ctx context.Context, entity entities.NewSecretEncod
 	return
 }
 
-// TODO add UNICQUE siteURL+login with error duplicated.
+// Get all user's secrets particular type.
 func (r *Repo) GetSecretsStor(ctx context.Context, userID string, stype entities.SecretType) (sites []entities.SecretEncoded, err error) {
 	query := `
 	SELECT secret_id, data, ekey_version, dkey, uploaded

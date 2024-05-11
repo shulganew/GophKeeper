@@ -11,14 +11,14 @@ import (
 
 // Generate new ephemeral key by admin request.
 func (k *Keeper) EKeyNew(w http.ResponseWriter, r *http.Request) {
-
 	eKey, ts, err := CreateEphemeralKey()
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		zap.S().Errorln("Error create  eKeys: ", err)
 	}
 	// Generate new key.
 	ekeyMem := entities.EKeyMem{EKey: eKey, TS: ts}
-	// Add to mem keyring
+	// Add to mem keyring.
 	k.eKeys = append(k.eKeys, ekeyMem)
 
 	// Save to storage.
@@ -44,10 +44,10 @@ func (k *Keeper) NewMaster(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Set new master key
+	// Set new master key.
 	k.conf.MasterKey = key.New
 
-	// Drop eKeys encoded by old master
+	// Drop eKeys encoded by old master.
 	k.DropKeyRing(r.Context())
 
 	// Save eKey from memory to database coded with new Master keys.

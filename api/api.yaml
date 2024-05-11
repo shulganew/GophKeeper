@@ -408,19 +408,19 @@ paths:
   /user/{secretID}:
     delete:
       summary: delet ID
-      description: file id is a secret id in DB for data (Site, Card, Text)
+      description: delet id is a secret id in DB for data (Site, Card, Text)
       operationId: DelAny
       parameters:
         - name: secretID
           in: path
-          description: ID of file to return
+          description: ID of return
           required: true
           schema:
             type: string
             format: string
       responses:
         '200':
-          description: file data
+          description: user data
         '401':
           description: User not authorized
         '500':

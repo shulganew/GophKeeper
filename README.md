@@ -1,6 +1,7 @@
 # GophKeeper
 Password keeper - server (Yandex praktikum final project)
 
+
 ## minIO
 install
 https://min.io/docs/minio/container/index.html
@@ -61,6 +62,8 @@ mockgen -source=internal/services/keeper.go \
     -destination=internal/services/mocks/keeper.gen.go \
     -package=mocks
 ```
+-destination mock-interfaces.go github.com/yourhandle/worker Doer
+```
 
 ## Переменные окружения
 
@@ -100,7 +103,7 @@ git rm --cached internal/api/oapi/gokeeper.gen.go
 ## Curl tests
 
 
-## Private key for jwt token
+## Private key for JWT token
 PrivateKey is an ECDSA private key which was generated with the following
 command:
 

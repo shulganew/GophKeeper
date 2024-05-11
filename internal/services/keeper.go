@@ -15,7 +15,6 @@ import (
 	"io"
 
 	"github.com/gofrs/uuid"
-	"github.com/minio/minio-go/v7"
 	"github.com/shulganew/GophKeeper/internal/api/jwt"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/app/config"
@@ -59,7 +58,7 @@ type Keeperer interface {
 
 type FileKeeper interface {
 	UploadFile(ctx context.Context, backet string, fileID string, fr io.Reader) (err error)
-	DownloadFile(ctx context.Context, backet string, fileID string) (fr *minio.Object, err error)
+	DownloadFile(ctx context.Context, backet string, fileID string) (fr io.ReadCloser, err error)
 }
 
 // Check interfaces.

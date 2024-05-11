@@ -63,14 +63,14 @@ func InitStore(ctx context.Context, conf config.Config) (stor *pg.Repo, err erro
 func InitMinIO(ctx context.Context, conf config.Config) (fstor *s3.FileRepo, err error) {
 	// Connection for Keeper MINIO.
 	mio, err := minio.New("localhost:9000", &minio.Options{
-		Creds:  credentials.NewStaticV4("GYD6J3FzdOVG49aB6Ycb", "Ms37ZNWDG9CLFQhW92tA36NfgZa1zgy0z76bVmIJ", ""),
+		Creds:  credentials.NewStaticV4(conf.IDmi, conf.Secretmi, ""),
 		Secure: false,
 	})
 	if err != nil {
 		return nil, err
 	}
 	// Load file storage.
-	fstor, err = s3.NewFileRepo(ctx, conf.Backet, mio)
+	fstor, err = s3.NewFileRepo(ctx, conf.Backetmi, mio)
 	if err != nil {
 		return nil, err
 	}

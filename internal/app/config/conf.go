@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/shulganew/GophKeeper/internal/app/validators"
@@ -24,7 +25,9 @@ type Config struct {
 
 	MasterKey string // Master password for GophKeeper storage.
 
-	Backet string // MINIO backet
+	Backetmi string // MINIO backet
+	IDmi     string
+	Secretmi string
 }
 
 func InitConfig() Config {
@@ -33,8 +36,8 @@ func InitConfig() Config {
 	serverAddress := flag.String("a", "localhost:8443", "Service GKeeper address")
 	dsnf := flag.String("d", "", "Data Source Name for DataBase connection")
 	jwtPath := flag.String("p", "cert/jwtpkey.pem", "path to JWT private key file, ex cert/jwtpkey.pem")
-	master := flag.String("m", "1NewMasterKey", "Master password for GophKeeper storage")
-	mb := flag.String("b", "gohpkeeper", "MINIO backet for files")
+	master := flag.String("m", "NewMasterKey", "Master password for GophKeeper storage")
+	mb := flag.String("b", "gohpkeeper:GYD6J3FzdOVG49aB6Ycb:Ms37ZNWDG9CLFQhW92tA36NfgZa1zgy0z76bVmIJ", "MINIO backet for files")
 
 	flag.Parse()
 
@@ -54,7 +57,11 @@ func InitConfig() Config {
 	config.MasterKey = *master
 
 	// MINIO.
-	config.Backet = *mb
+	minioConf := strings.Split(*mb, ":")
+
+	config.Backetmi = minioConf[0]
+	config.IDmi = minioConf[1]
+	config.Secretmi = minioConf[2]
 
 	// if env var does not exist  - set def value
 	if exist {

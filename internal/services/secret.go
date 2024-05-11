@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
+	"errors"
 	"slices"
 	"time"
 
@@ -29,13 +30,13 @@ func (k *Keeper) GetActualEKey() (eKey entities.EKeyMem) {
 }
 
 // Get key from memory by time stamp (ts used as key version).
-func (k *Keeper) GetEKey(ts time.Time) (eKey entities.EKeyMem) {
+func (k *Keeper) GetEKey(ts time.Time) (eKey *entities.EKeyMem, err error) {
 	id := slices.IndexFunc(k.eKeys, func(key entities.EKeyMem) bool { return key.TS.Equal(ts) })
 	if id != -1 {
 		zap.S().Debugln("Get eKey: ", k.eKeys[id].TS)
-		return k.eKeys[id]
+		return &k.eKeys[id], nil
 	}
-	return
+	return nil, errors.New("ephemeral key not found.")
 }
 
 // Load all keys to ekeys key ring, (last time stamp), with master key encoding.
@@ -290,7 +291,11 @@ func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entitie
 
 	for _, secret := range secretsc {
 		// Get ephemeral key (version from ts in db) for decode data key.
-		eKey := k.GetEKey(secret.EKeyVer)
+		eKey, err := k.GetEKey(secret.EKeyVer)
+		if err != nil {
+			zap.S().Errorln("EKey not found: ", err)
+			return nil, err
+		}
 		// Decode dKeyc
 		dKey, err := DecodeKey(secret.DKeyCr, eKey.EKey)
 		if err != nil {
@@ -320,7 +325,11 @@ func (k *Keeper) GetSecret(ctx context.Context, userID string, dataType entities
 	}
 
 	// Get ephemeral key (version from ts in db) for decode data key.
-	eKey := k.GetEKey(secretsc.EKeyVer)
+	eKey, err := k.GetEKey(secretsc.EKeyVer)
+	if err != nil {
+		zap.S().Errorln("EKey not found: ", err)
+		return nil, err
+	}
 	// Decode dKeyc
 	dKey, err := DecodeKey(secretsc.DKeyCr, eKey.EKey)
 	if err != nil {

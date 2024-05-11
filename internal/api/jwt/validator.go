@@ -60,6 +60,7 @@ func GetUserID(v JWSValidator, req *http.Request) (string, error) {
 
 }
 
+// Init new authenticator for permission check.
 func NewAuthenticator(v JWSValidator) openapi3filter.AuthenticationFunc {
 	return func(ctx context.Context, input *openapi3filter.AuthenticationInput) error {
 		return Authenticate(v, ctx, input)
@@ -130,6 +131,7 @@ func GetClaimsFromToken(t jwt.Token) ([]string, error) {
 	return claims, nil
 }
 
+// Check token expected climes with expected/
 func CheckTokenClaims(expectedClaims []string, t jwt.Token) error {
 	claims, err := GetClaimsFromToken(t)
 	if err != nil {
@@ -147,6 +149,8 @@ func CheckTokenClaims(expectedClaims []string, t jwt.Token) error {
 	}
 	return nil
 }
+
+// Read key for JWS, path from config file.
 func GetPrivateKey(conf config.Config) (key []byte, err error) {
 	file, err := os.Open(conf.PathJWT)
 	if err != nil {

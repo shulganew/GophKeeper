@@ -11,7 +11,6 @@ import (
 
 	uuid "github.com/gofrs/uuid"
 	gomock "github.com/golang/mock/gomock"
-	minio "github.com/minio/minio-go/v7"
 	entities "github.com/shulganew/GophKeeper/internal/entities"
 )
 
@@ -222,10 +221,10 @@ func (m *MockFileKeeper) EXPECT() *MockFileKeeperMockRecorder {
 }
 
 // DownloadFile mocks base method.
-func (m *MockFileKeeper) DownloadFile(ctx context.Context, backet, fileID string) (*minio.Object, error) {
+func (m *MockFileKeeper) DownloadFile(ctx context.Context, backet, fileID string) (io.ReadCloser, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DownloadFile", ctx, backet, fileID)
-	ret0, _ := ret[0].(*minio.Object)
+	ret0, _ := ret[0].(io.ReadCloser)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

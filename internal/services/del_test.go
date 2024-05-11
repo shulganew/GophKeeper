@@ -21,16 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// JWT key, only for testing!
-const JWTPemKey = `
------BEGIN EC PRIVATE KEY-----
-MHcCAQEEIP/dvfMGvKrM79LZuO9yfc3/HQGAvFoVzxYu2F1xkGKEoAoGCCqGSM49
-AwEHoUQDQgAEV/0PntMTRVNu/ZZ8/mUdWZVCOevNaXlqUHSKR+YaC7X24Slj8HH1
-cYJis1ufjejX19xk8XbFT8M1zyh4h0jwrw==
------END EC PRIVATE KEY-----
-`
-
-func TestSite(t *testing.T) {
+func TestDel(t *testing.T) {
 	tests := []struct {
 		name           string
 		path           string
@@ -40,18 +31,17 @@ func TestSite(t *testing.T) {
 		statusList     int
 		statusPut      int
 		statusDel      int
-		int
-		nsites []oapi.NewSite
+		ntexts         []oapi.NewGtext
 	}{
 		{
-			name:           "Check site add and site list methods",
-			requestPath:    "/user/site",
+			name:           "Check delete method",
+			requestPath:    "/user/text",
 			requestPathDel: "/user/",
 			statusAdd:      http.StatusCreated,
 			statusList:     http.StatusOK,
 			statusPut:      http.StatusOK,
 			statusDel:      http.StatusOK,
-			nsites:         []oapi.NewSite{{Definition: "mysite2", Site: "www2.ru", Slogin: "igor2", Spw: "1232"}, {Definition: "mysite", Site: "www.ru", Slogin: "igor", Spw: "123"}},
+			ntexts:         []oapi.NewGtext{{Definition: "mytext1", Note: "Long story"}, {Definition: "mytext2", Note: "Long tail"}},
 		},
 	}
 
@@ -130,24 +120,24 @@ func TestSite(t *testing.T) {
 			allowAll, err := auth.CreateJWSWithClaims(userID.String(), []string{})
 			require.NoError(t, err)
 
-			for _, site := range tt.nsites {
-				jsonSite, err := json.Marshal(site)
+			for _, text := range tt.ntexts {
+				jsontext, err := json.Marshal(text)
 				require.NoError(t, err)
 
 				// Create request.
-				rr := testutil.NewRequest().Post(tt.requestPath).WithContentType("application/json").WithBody(jsonSite).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
+				rr := testutil.NewRequest().Post(tt.requestPath).WithContentType("application/json").WithBody(jsontext).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
 				require.Equal(t, tt.statusAdd, rr.Code)
 
-				var resultSite oapi.Site
-				err = json.NewDecoder(rr.Body).Decode(&resultSite)
+				var resulttext oapi.Gtext
+				err = json.NewDecoder(rr.Body).Decode(&resulttext)
 				require.NoError(t, err, "error unmarshaling response")
-				t.Log("Result: ", resultSite)
+				t.Log("Result: ", resulttext)
 			}
 
-			// List all sites data.
+			// List all texts data.
 			_ = repo.EXPECT().
 				GetSecretsStor(gomock.Any(), gomock.Any(), gomock.Any()).
-				DoAndReturn(func(_ any, _ string, _ entities.SecretType) (sites []entities.SecretEncoded, err error) {
+				DoAndReturn(func(_ any, _ string, _ entities.SecretType) (texts []entities.SecretEncoded, err error) {
 					s := make([]entities.SecretEncoded, 0, len(storage))
 					for _, value := range storage {
 						s = append(s, value)
@@ -155,39 +145,16 @@ func TestSite(t *testing.T) {
 					return s, nil
 				}).
 				AnyTimes()
+
 			// List all
 			rr := testutil.NewRequest().Get(tt.requestPath).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
 			require.Equal(t, tt.statusList, rr.Code)
 
-			var secrets map[string]oapi.Site
+			var secrets map[string]oapi.Gtext
 			err = json.NewDecoder(rr.Body).Decode(&secrets)
 
 			require.NoError(t, err, "error unmarshaling response")
 			t.Log("Result: ", secrets)
-
-			// Update checking.
-			_ = repo.EXPECT().
-				UpdateSecretStor(gomock.Any(), gomock.Any(), gomock.Any()).
-				DoAndReturn(func(_ any, e entities.NewSecretEncoded, secretID string) (err error) {
-					u, err := uuid.FromString(secretID)
-					require.NoError(t, err)
-					storage[secretID] = entities.SecretEncoded{SecretID: u, NewSecret: e.NewSecret, DataCr: e.DataCr}
-					return nil
-				}).
-				AnyTimes()
-			// Get secret id for test.
-			var siteIDs []string
-			for k := range secrets {
-				siteIDs = append(siteIDs, k)
-			}
-
-			// Cange first element.
-			updated := oapi.Site{SiteID: siteIDs[0], Definition: "New", Site: "news.ru", Slogin: "log", Spw: "123"}
-			jsonSite, err := json.Marshal(updated)
-			require.NoError(t, err)
-
-			rr = testutil.NewRequest().Put(tt.requestPath).WithContentType("application/json").WithBody(jsonSite).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
-			require.Equal(t, tt.statusPut, rr.Code)
 
 			_ = repo.EXPECT().
 				DeleteSecretStor(gomock.Any(), gomock.Any()).
@@ -198,21 +165,19 @@ func TestSite(t *testing.T) {
 				}).
 				AnyTimes()
 
-			// Delete second element.
-			rr = testutil.NewRequest().Delete(tt.requestPathDel+siteIDs[1]).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
-			require.Equal(t, tt.statusDel, rr.Code)
+			// Delete all items from db.
 
-			// List elements and check existense of first siteIDs[0]
+			for secretID := range secrets {
+				rr = testutil.NewRequest().Delete(tt.requestPathDel+secretID).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
+				require.Equal(t, tt.statusDel, rr.Code)
+			}
+
+			// List elements and check existense.
 			rr = testutil.NewRequest().Get(tt.requestPath).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
-			require.Equal(t, tt.statusList, rr.Code)
+			require.Equal(t, http.StatusNoContent, rr.Code)
 
-			secrets = make(map[string]oapi.Site)
-			err = json.NewDecoder(rr.Body).Decode(&secrets)
-			require.NoError(t, err)
-			// Updated element exist and equal.
-			require.Equal(t, updated, secrets[siteIDs[0]])
-			// Deleted second element.
-			require.Equal(t, 1, len(secrets))
+			// Enpty database.
+			require.Equal(t, 0, len(storage))
 		})
 	}
 }

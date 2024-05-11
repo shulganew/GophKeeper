@@ -21,16 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// JWT key, only for testing!
-const JWTPemKey = `
------BEGIN EC PRIVATE KEY-----
-MHcCAQEEIP/dvfMGvKrM79LZuO9yfc3/HQGAvFoVzxYu2F1xkGKEoAoGCCqGSM49
-AwEHoUQDQgAEV/0PntMTRVNu/ZZ8/mUdWZVCOevNaXlqUHSKR+YaC7X24Slj8HH1
-cYJis1ufjejX19xk8XbFT8M1zyh4h0jwrw==
------END EC PRIVATE KEY-----
-`
-
-func TestSite(t *testing.T) {
+func TestCard(t *testing.T) {
 	tests := []struct {
 		name           string
 		path           string
@@ -40,18 +31,17 @@ func TestSite(t *testing.T) {
 		statusList     int
 		statusPut      int
 		statusDel      int
-		int
-		nsites []oapi.NewSite
+		ncards         []oapi.NewCard
 	}{
 		{
-			name:           "Check site add and site list methods",
-			requestPath:    "/user/site",
+			name:           "Check card add and card list methods",
+			requestPath:    "/user/card",
 			requestPathDel: "/user/",
 			statusAdd:      http.StatusCreated,
 			statusList:     http.StatusOK,
 			statusPut:      http.StatusOK,
 			statusDel:      http.StatusOK,
-			nsites:         []oapi.NewSite{{Definition: "mysite2", Site: "www2.ru", Slogin: "igor2", Spw: "1232"}, {Definition: "mysite", Site: "www.ru", Slogin: "igor", Spw: "123"}},
+			ncards:         []oapi.NewCard{{Definition: "mycard1", Ccn: "1234 56789 9000 0000", Exp: "11/25", Cvv: "132", Hld: "Igor"}, {Definition: "mycard1", Ccn: "1234 56789 9000 1111", Exp: "11/26", Cvv: "3132", Hld: "Mariya"}},
 		},
 	}
 
@@ -127,27 +117,31 @@ func TestSite(t *testing.T) {
 				}).
 				AnyTimes()
 
+				// Add jwt to header.
+
 			allowAll, err := auth.CreateJWSWithClaims(userID.String(), []string{})
 			require.NoError(t, err)
 
-			for _, site := range tt.nsites {
-				jsonSite, err := json.Marshal(site)
+			for _, card := range tt.ncards {
+				jsoncard, err := json.Marshal(card)
 				require.NoError(t, err)
 
 				// Create request.
-				rr := testutil.NewRequest().Post(tt.requestPath).WithContentType("application/json").WithBody(jsonSite).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
+				rr := testutil.NewRequest().Post(tt.requestPath).WithContentType("application/json").WithBody(jsoncard).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
 				require.Equal(t, tt.statusAdd, rr.Code)
 
-				var resultSite oapi.Site
-				err = json.NewDecoder(rr.Body).Decode(&resultSite)
+				// Not check answer if jwt not existed.
+
+				var resultcard oapi.Card
+				err = json.NewDecoder(rr.Body).Decode(&resultcard)
 				require.NoError(t, err, "error unmarshaling response")
-				t.Log("Result: ", resultSite)
+				t.Log("Result: ", resultcard)
 			}
 
-			// List all sites data.
+			// List all cards data.
 			_ = repo.EXPECT().
 				GetSecretsStor(gomock.Any(), gomock.Any(), gomock.Any()).
-				DoAndReturn(func(_ any, _ string, _ entities.SecretType) (sites []entities.SecretEncoded, err error) {
+				DoAndReturn(func(_ any, _ string, _ entities.SecretType) (cards []entities.SecretEncoded, err error) {
 					s := make([]entities.SecretEncoded, 0, len(storage))
 					for _, value := range storage {
 						s = append(s, value)
@@ -159,7 +153,9 @@ func TestSite(t *testing.T) {
 			rr := testutil.NewRequest().Get(tt.requestPath).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
 			require.Equal(t, tt.statusList, rr.Code)
 
-			var secrets map[string]oapi.Site
+			// Not check answer if jwt not existed.
+
+			var secrets map[string]oapi.Card
 			err = json.NewDecoder(rr.Body).Decode(&secrets)
 
 			require.NoError(t, err, "error unmarshaling response")
@@ -176,17 +172,17 @@ func TestSite(t *testing.T) {
 				}).
 				AnyTimes()
 			// Get secret id for test.
-			var siteIDs []string
+			var cardIDs []string
 			for k := range secrets {
-				siteIDs = append(siteIDs, k)
+				cardIDs = append(cardIDs, k)
 			}
 
 			// Cange first element.
-			updated := oapi.Site{SiteID: siteIDs[0], Definition: "New", Site: "news.ru", Slogin: "log", Spw: "123"}
-			jsonSite, err := json.Marshal(updated)
+			updated := oapi.Card{CardID: cardIDs[0], Definition: "Correct mycard1", Ccn: "1234 56789 9000 2222", Exp: "12/25", Cvv: "232", Hld: "Igor"}
+			jsoncard, err := json.Marshal(updated)
 			require.NoError(t, err)
 
-			rr = testutil.NewRequest().Put(tt.requestPath).WithContentType("application/json").WithBody(jsonSite).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
+			rr = testutil.NewRequest().Put(tt.requestPath).WithContentType("application/json").WithBody(jsoncard).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
 			require.Equal(t, tt.statusPut, rr.Code)
 
 			_ = repo.EXPECT().
@@ -199,18 +195,18 @@ func TestSite(t *testing.T) {
 				AnyTimes()
 
 			// Delete second element.
-			rr = testutil.NewRequest().Delete(tt.requestPathDel+siteIDs[1]).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
+			rr = testutil.NewRequest().Delete(tt.requestPathDel+cardIDs[1]).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
 			require.Equal(t, tt.statusDel, rr.Code)
 
 			// List elements and check existense of first siteIDs[0]
 			rr = testutil.NewRequest().Get(tt.requestPath).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
 			require.Equal(t, tt.statusList, rr.Code)
 
-			secrets = make(map[string]oapi.Site)
+			secrets = make(map[string]oapi.Card)
 			err = json.NewDecoder(rr.Body).Decode(&secrets)
 			require.NoError(t, err)
 			// Updated element exist and equal.
-			require.Equal(t, updated, secrets[siteIDs[0]])
+			require.Equal(t, updated, secrets[cardIDs[0]])
 			// Deleted second element.
 			require.Equal(t, 1, len(secrets))
 		})

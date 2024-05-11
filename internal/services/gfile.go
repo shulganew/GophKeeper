@@ -44,6 +44,7 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 	meta := make([]byte, data)
 	_, err = fr.Read(meta)
 	if err != nil {
+		zap.S().Errorln("Can't Read preambule: ", err)
 		http.Error(w, "Can't Read preambule.", http.StatusInternalServerError)
 	}
 
@@ -51,6 +52,7 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 	var nfile oapi.NewGfile
 	err = gob.NewDecoder(bytes.NewReader(meta)).Decode(&nfile)
 	if err != nil {
+		zap.S().Errorln("Can't Read metadata: ", err)
 		http.Error(w, "Can't Read metadata.", http.StatusInternalServerError)
 	}
 
@@ -89,7 +91,7 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Upload file to minio
-	err = k.fstor.UploadFile(r.Context(), k.conf.Backet, gfileID.String(), bytes.NewBuffer(dataFc))
+	err = k.fstor.UploadFile(r.Context(), k.conf.Backetmi, gfileID.String(), bytes.NewBuffer(dataFc))
 	if err != nil {
 		zap.S().Errorln("Can't upload: ", err)
 		http.Error(w, "Can't upload file fo s3.", http.StatusInternalServerError)
@@ -197,7 +199,7 @@ func (k *Keeper) GetGfile(w http.ResponseWriter, r *http.Request, fileID string)
 	}
 
 	gfile.GfileID = secretDecoded.SecretID.String()
-	fr, err := k.fstor.DownloadFile(r.Context(), k.conf.Backet, gfile.GfileID)
+	fr, err := k.fstor.DownloadFile(r.Context(), k.conf.Backetmi, gfile.GfileID)
 	if err != nil {
 		zap.S().Errorln("Can't Download: ", err)
 		http.Error(w, "Can't Download.", http.StatusInternalServerError)
