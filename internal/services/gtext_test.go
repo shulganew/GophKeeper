@@ -146,7 +146,7 @@ func TestText(t *testing.T) {
 				}).
 				AnyTimes()
 
-			// List all
+			// List all.
 			rr := testutil.NewRequest().Get(tt.requestPath).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
 			require.Equal(t, tt.statusList, rr.Code)
 

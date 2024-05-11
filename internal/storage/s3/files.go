@@ -30,3 +30,14 @@ func (r *FileRepo) DownloadFile(ctx context.Context, backet string, fileID strin
 	}
 	return
 }
+
+// Delete file from  MINIO storage.
+func (r *FileRepo) DeleteFile(ctx context.Context, backet string, fileID string) (err error) {
+	// Put object to minio.
+	zap.S().Debugln("Key Del: ", fileID)
+	err = r.mio.RemoveObject(ctx, backet, fileID, minio.RemoveObjectOptions{})
+	if err != nil {
+		return fmt.Errorf("downlad file to MIO problem: %w", err)
+	}
+	return
+}

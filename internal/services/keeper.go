@@ -59,6 +59,7 @@ type Keeperer interface {
 type FileKeeper interface {
 	UploadFile(ctx context.Context, backet string, fileID string, fr io.Reader) (err error)
 	DownloadFile(ctx context.Context, backet string, fileID string) (fr io.ReadCloser, err error)
+	DeleteFile(ctx context.Context, backet string, fileID string) (err error)
 }
 
 // Check interfaces.

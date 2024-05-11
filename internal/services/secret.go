@@ -36,7 +36,7 @@ func (k *Keeper) GetEKey(ts time.Time) (eKey *entities.EKeyMem, err error) {
 		zap.S().Debugln("Get eKey: ", k.eKeys[id].TS)
 		return &k.eKeys[id], nil
 	}
-	return nil, errors.New("ephemeral key not found.")
+	return nil, errors.New("ephemeral key not found")
 }
 
 // Load all keys to ekeys key ring, (last time stamp), with master key encoding.

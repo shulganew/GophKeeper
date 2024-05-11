@@ -230,9 +230,36 @@ func (k *Keeper) GetGfile(w http.ResponseWriter, r *http.Request, fileID string)
 	}
 
 	// Copy and Decode file reader.
-	zap.S().Debugln("data key get: ", hex.EncodeToString(secretDecoded.DKeyCr))
 	if _, err := io.CopyN(w, bytes.NewBuffer(dataF), int64(len(dataF))); err != nil {
 		zap.S().Errorln("Can't copy to resp: ", err)
 		http.Error(w, "Can't copy to resp.", http.StatusInternalServerError)
 	}
+}
+
+// Return gfile from storage. fileID == secretID (+) entities.FILE
+func (k *Keeper) DelGfile(w http.ResponseWriter, r *http.Request, fileID string) {
+
+	zap.S().Debugln("File id:", fileID)
+	_, err := uuid.FromString(fileID)
+	if err != nil {
+		zap.S().Errorln("file ID not correct: ", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	// Del Gfile from DB.
+	err = k.DeleteSecret(r.Context(), fileID)
+	if err != nil {
+		zap.S().Errorln("Error deleting file in DB: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = k.fstor.DeleteFile(r.Context(), k.conf.Backetmi, fileID)
+	if err != nil {
+		zap.S().Errorln("Can't Delete in File Storage: ", err)
+		http.Error(w, "Can't Delete in File Storage.", http.StatusInternalServerError)
+	}
+
+	// set status code 200
+	w.WriteHeader(http.StatusOK)
 }

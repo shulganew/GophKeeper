@@ -220,6 +220,20 @@ func (m *MockFileKeeper) EXPECT() *MockFileKeeperMockRecorder {
 	return m.recorder
 }
 
+// DeleteFile mocks base method.
+func (m *MockFileKeeper) DeleteFile(ctx context.Context, backet, fileID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteFile", ctx, backet, fileID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteFile indicates an expected call of DeleteFile.
+func (mr *MockFileKeeperMockRecorder) DeleteFile(ctx, backet, fileID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteFile", reflect.TypeOf((*MockFileKeeper)(nil).DeleteFile), ctx, backet, fileID)
+}
+
 // DownloadFile mocks base method.
 func (m *MockFileKeeper) DownloadFile(ctx context.Context, backet, fileID string) (io.ReadCloser, error) {
 	m.ctrl.T.Helper()

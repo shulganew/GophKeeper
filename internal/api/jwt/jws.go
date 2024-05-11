@@ -11,7 +11,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 )
 
-const KeyID = `fake-key-id`
+const KeyID = "key-id"
 const FakeIssuer = "fake-issuer"
 const FakeAudience = "example-users"
 const PermissionsClaim = "perm"

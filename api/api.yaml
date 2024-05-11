@@ -405,6 +405,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    delete:
+      summary: delete from from db and storage by id
+      description: file id is a secret id in DB, storage id - in minio
+      operationId: DelGfile
+      parameters:
+        - name: fileID
+          in: path
+          description: ID of file 
+          required: true
+          schema:
+            type: string
+            format: string
+      responses:
+        '200':
+          description: file was removed
+          required: true
+          content:
+            application/octet-stream:
+                schema:
+                  type: string
+                  format: binary
+        '401':
+          description: User not authorized
+        '500':
+          description: Internal error site listing
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /user/{secretID}:
     delete:
       summary: delet ID
