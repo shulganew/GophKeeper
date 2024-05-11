@@ -637,6 +637,7 @@ components:
       required:
         - definition
         - fname
+        - size
       properties:
         definition:
           type: string
@@ -646,6 +647,10 @@ components:
           type: string
           format: string
           description: File name on the user's side
+        size:
+          type: integer
+          format: int64
+          description: File size
     Key:
       required:
         - old

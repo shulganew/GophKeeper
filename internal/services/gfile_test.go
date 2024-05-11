@@ -70,7 +70,7 @@ func (r *UploadReader) Read(b []byte) (totlal int, err error) {
 		if err != nil {
 			return totlal, err
 		}
-		n := copy(b[PreambleLeth+r.metaLen:PreambleLeth+r.metaLen+int64(fn)], bf)
+		n := copy(b[totlal:totlal+fn], bf)
 		r.index += int64(n)
 		totlal += n
 		return totlal, nil

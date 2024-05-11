@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/alecthomas/units"
 	"github.com/gofrs/uuid"
 	"github.com/shulganew/GophKeeper/internal/api/jwt"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
@@ -30,7 +31,7 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get file reader from body.
+	// Get file readcloser from body.
 	fr := r.Body
 	// Get preablule with lenth of metadata
 	preamble := make([]byte, PreambleLeth)
@@ -62,6 +63,13 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.S().Errorln("Error coding Gfile to data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// File size constrain 30 MIB.
+	if nfile.Size > int64(units.Mebibyte*30) {
+		zap.S().Errorln("File too big. : ", err)
+		http.Error(w, "File too big, size less 30MiB", http.StatusBadRequest)
 		return
 	}
 
