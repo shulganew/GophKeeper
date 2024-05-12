@@ -23,7 +23,7 @@ func (s *SecretType) String() string {
 // DB DTO type for storing secter data.
 // OAPI pattern - new mean struct without id (new constructor),
 // id will be retruned by DB
-// !!! Each encodeted date type has own ID, for ex Gfile has gfileID, whitch equal secredtID in database. i.e. secredtID type FILE == gfileID
+// !!! Each encodeted date type has own ID, for ex Gfile has gfileID, whitch equal secredtID in database. For ex secredtID type FILE == gfileID.
 type NewSecret struct {
 	UserID   string     `db:"user_id"`
 	Type     SecretType `db:"type"` // Type of data - Site data, Credit card, Text or file.
@@ -48,7 +48,7 @@ type NewSecretDecoded struct {
 	Data []byte // Stored decod data.
 }
 
-// Data in struct with crypted data.
+// NewSecretEncoded data in struct with crypted data.
 type NewSecretEncoded struct {
 	NewSecret
 	DataCr []byte `db:"data"` // Stored crypted data - data crypted.

@@ -126,10 +126,10 @@ func (mr *MockKeepererMockRecorder) GetSecretStor(ctx, secretID interface{}) *go
 }
 
 // GetSecretsStor mocks base method.
-func (m *MockKeeperer) GetSecretsStor(ctx context.Context, userID string, stype entities.SecretType) ([]entities.SecretEncoded, error) {
+func (m *MockKeeperer) GetSecretsStor(ctx context.Context, userID string, stype entities.SecretType) ([]*entities.SecretEncoded, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetSecretsStor", ctx, userID, stype)
-	ret0, _ := ret[0].([]entities.SecretEncoded)
+	ret0, _ := ret[0].([]*entities.SecretEncoded)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

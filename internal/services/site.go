@@ -72,7 +72,6 @@ func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
 	// Load decoded data and decode binary data to oapi.Site.
 	sites := make(map[string]oapi.Site, len(secretDecoded))
 	for _, secret := range secretDecoded {

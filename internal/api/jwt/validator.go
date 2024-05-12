@@ -14,21 +14,19 @@ import (
 	"github.com/shulganew/GophKeeper/internal/app/config"
 )
 
-// JWSValidator is used to validate JWS payloads and return a JWT if they're
-// valid
+// JWSValidator is used to validate JWS payloads and return a JWT if they're valid.
 type JWSValidator interface {
 	ValidateJWS(jws string) (jwt.Token, error)
 }
 
-// GetJWSFromRequest extracts a JWS string from an Authorization: Bearer <jws> header
+// GetJWSFromRequest extracts a JWS string from an Authorization: Bearer <jws> header.
 func GetJWSFromRequest(req *http.Request) (string, error) {
 	authHdr := req.Header.Get("Authorization")
 	// Check for the Authorization header.
 	if authHdr == "" {
 		return "", errors.New("authorization header is missing")
 	}
-	// We expect a header value of the form "Bearer <token>", with 1 space after
-	// Bearer, per spec.
+	// We expect a header value of the form "Bearer <token>", with 1 space after Bearer, per spec.
 	prefix := "Bearer "
 	if !strings.HasPrefix(authHdr, prefix) {
 		return "", errors.New("authorization header is malformed")
@@ -43,7 +41,7 @@ func GetUserID(v JWSValidator, req *http.Request) (string, error) {
 		return "", fmt.Errorf("getting jws: %w", err)
 	}
 
-	// if the JWS is valid, we have a JWT, which will contain a bunch of claims.
+	// If the JWS is valid, we have a JWT, which will contain a bunch of claims.
 	token, err := v.ValidateJWS(jws)
 	if err != nil {
 		return "", fmt.Errorf("validating JWS: %w", err)
@@ -131,7 +129,7 @@ func GetClaimsFromToken(t jwt.Token) ([]string, error) {
 	return claims, nil
 }
 
-// Check token expected climes with expected/
+// Check token expected climes with expected.
 func CheckTokenClaims(expectedClaims []string, t jwt.Token) error {
 	claims, err := GetClaimsFromToken(t)
 	if err != nil {

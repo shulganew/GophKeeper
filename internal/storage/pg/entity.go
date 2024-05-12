@@ -19,13 +19,13 @@ func (r *Repo) AddSecretStor(ctx context.Context, entity entities.NewSecretEncod
 	secretID = &uuid.UUID{}
 	err = r.db.GetContext(ctx, secretID, query, entity.UserID, stype, entity.DataCr, entity.EKeyVer, entity.DKeyCr, entity.Uploaded)
 	if err != nil {
-		return nil, fmt.Errorf("db error during add Site credentials, error: %w", err)
+		return nil, fmt.Errorf("db error during add  %s credentials, error: %w", stype.String(), err)
 	}
 	return
 }
 
 // Get all user's secrets particular type.
-func (r *Repo) GetSecretsStor(ctx context.Context, userID string, stype entities.SecretType) (sites []entities.SecretEncoded, err error) {
+func (r *Repo) GetSecretsStor(ctx context.Context, userID string, stype entities.SecretType) (sites []*entities.SecretEncoded, err error) {
 	query := `
 	SELECT secret_id, data, ekey_version, dkey, uploaded
 	FROM secrets 
@@ -34,7 +34,7 @@ func (r *Repo) GetSecretsStor(ctx context.Context, userID string, stype entities
 	`
 	err = r.db.SelectContext(ctx, &sites, query, stype, userID)
 	if err != nil {
-		return nil, fmt.Errorf("db error during getting list Site credentials, error: %w", err)
+		return nil, fmt.Errorf("db error during getting list %s credentials, error: %w", stype.String(), err)
 	}
 	return
 }
@@ -50,7 +50,7 @@ func (r *Repo) GetSecretStor(ctx context.Context, secretID string) (sectet *enti
 	se := entities.SecretEncoded{}
 	err = r.db.GetContext(ctx, &se, query, secretID)
 	if err != nil {
-		return nil, fmt.Errorf("db error during getting list Site credentials, error: %w", err)
+		return nil, fmt.Errorf("db error during getting secrets, error: %w", err)
 	}
 	return &se, nil
 }
@@ -64,7 +64,7 @@ func (r *Repo) UpdateSecretStor(ctx context.Context, entity entities.NewSecretEn
 
 	_, err = r.db.ExecContext(ctx, query, entity.DataCr, entity.EKeyVer, entity.DKeyCr, time.Now(), secretID)
 	if err != nil {
-		return fmt.Errorf("db error during getting list Site credentials, error: %w", err)
+		return fmt.Errorf("db error during update secrets, error: %w", err)
 	}
 
 	return nil
@@ -77,7 +77,7 @@ func (r *Repo) DeleteSecretStor(ctx context.Context, secretID string) (err error
 
 	_, err = r.db.ExecContext(ctx, query, secretID)
 	if err != nil {
-		return fmt.Errorf("db error during getting list Site credentials, error: %w", err)
+		return fmt.Errorf("db error during delete secrets, error: %w", err)
 	}
 
 	return nil

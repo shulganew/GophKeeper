@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// Delelete site data
+// Delelete site data.
 func (k *Keeper) DelAny(w http.ResponseWriter, r *http.Request, secretID string) {
 	err := k.DeleteSecret(r.Context(), secretID)
 	if err != nil {

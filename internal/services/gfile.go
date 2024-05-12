@@ -21,7 +21,7 @@ const PreambleLeth = 8
 
 // Files add with two steps:
 // 1. Uplod file and return created file id in minio storage.
-// 2. Create file metadata as sectet in db with users description (definition field and file_id)
+// 2. Create file metadata as sectet in db with users description (definition field and file_id).
 func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 	// Get userID from jwt.
 	userID, err := jwt.GetUserID(k.ua, r)
@@ -90,7 +90,13 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fr.Close()
+
+	defer func() {
+		err := fr.Close()
+		if err != nil {
+			zap.S().Errorln("Can't close minio: ", err)
+		}
+	}()
 
 	dataFc, err := EncodeData(dKey, dataF)
 	if err != nil {
@@ -166,7 +172,7 @@ func (k *Keeper) ListGfiles(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// Return gfile from storage. fileID == secretID (+) entities.FILE
+// Return gfile from storage, fileID == secretID (+) entities.FILE.
 func (k *Keeper) GetGfile(w http.ResponseWriter, r *http.Request, fileID string) {
 	// Get userID from jwt.
 	userID, err := jwt.GetUserID(k.ua, r)
@@ -244,7 +250,7 @@ func (k *Keeper) GetGfile(w http.ResponseWriter, r *http.Request, fileID string)
 	}
 }
 
-// Return gfile from storage. fileID == secretID (+) entities.FILE
+// Return gfile from storage, fileID == secretID (+) entities.FILE.
 func (k *Keeper) DelGfile(w http.ResponseWriter, r *http.Request, fileID string) {
 
 	zap.S().Debugln("File id:", fileID)

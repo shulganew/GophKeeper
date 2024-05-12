@@ -137,10 +137,10 @@ func TestDel(t *testing.T) {
 			// List all texts data.
 			_ = repo.EXPECT().
 				GetSecretsStor(gomock.Any(), gomock.Any(), gomock.Any()).
-				DoAndReturn(func(_ any, _ string, _ entities.SecretType) (texts []entities.SecretEncoded, err error) {
-					s := make([]entities.SecretEncoded, 0, len(storage))
+				DoAndReturn(func(_ any, _ string, _ entities.SecretType) (texts []*entities.SecretEncoded, err error) {
+					s := make([]*entities.SecretEncoded, 0, len(storage))
 					for _, value := range storage {
-						s = append(s, value)
+						s = append(s, &value)
 					}
 					return s, nil
 				}).

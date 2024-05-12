@@ -137,7 +137,7 @@ func (k *Keeper) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-// Delelete card data
+// Delelete card data.
 func (k *Keeper) DelCard(w http.ResponseWriter, r *http.Request, cardID string) {
 	err := k.DeleteSecret(r.Context(), cardID)
 	if err != nil {

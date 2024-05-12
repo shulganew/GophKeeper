@@ -67,7 +67,7 @@ func main() {
 
 	// Start web server.
 	restDone := app.StartAPI(ctx, &conf, componentsErrs, rt)
-	//Graceful shutdown.
+	// Graceful shutdown.
 	app.Graceful(ctx, cancel, componentsErrs)
 
 	// Waiting http server shuting down.

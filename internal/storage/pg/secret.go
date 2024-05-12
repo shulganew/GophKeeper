@@ -27,7 +27,7 @@ func (r *Repo) SaveEKeyc(ctx context.Context, eKeyc entities.EKeyDB) (err error)
 	return
 }
 
-// Drop eKeyc in storage
+// Drop eKeyc in storage.
 func (r *Repo) DropKeys(ctx context.Context) (err error) {
 	query := `Delete from ekeys`
 	_, err = r.db.ExecContext(ctx, query)

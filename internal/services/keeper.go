@@ -2,10 +2,10 @@
 //
 // File secrets has main methods for crypto GophKeeper tasks.
 // Key types, whitch GophKeeper use:
-// mKey - master key, use for encoding ephemeral keys.
-// eKey - Ephemeral key, use for dKey saving in database. store in separate table "ekeys", encoded by mKey.
+// - mKey - master key, use for encoding ephemeral keys.
+// - eKey - Ephemeral key, use for dKey saving in database. Store in separate table "ekeys", encoded by mKey.
 // It stored opened in memory during service loading.
-// dKey - Data key (use for data coding in table secretes. Saved in the same table, encoded by eKey
+// - dKey - Data key (use for data coding in table secretes. Saved in the same table, encoded by eKey
 // Create Ephemeral key from master key, user time stamp as key id. Time stamp == key version.
 // Postfix "c" in key name means crypted, for ex "eKeyc" mean ephemeral key enceded by master key, "dKeyc" = data key enceded by eKey.
 package services
@@ -44,7 +44,7 @@ type Keeperer interface {
 
 	// Entities credentials methods (site, card, text, file)
 	AddSecretStor(ctx context.Context, entity entities.NewSecretEncoded, stype entities.SecretType) (siteID *uuid.UUID, err error)
-	GetSecretsStor(ctx context.Context, userID string, stype entities.SecretType) (site []entities.SecretEncoded, err error)
+	GetSecretsStor(ctx context.Context, userID string, stype entities.SecretType) (site []*entities.SecretEncoded, err error)
 	GetSecretStor(ctx context.Context, secretID string) (site *entities.SecretEncoded, err error)
 	UpdateSecretStor(ctx context.Context, entity entities.NewSecretEncoded, secretID string) (err error)
 	DeleteSecretStor(ctx context.Context, secretID string) (err error)

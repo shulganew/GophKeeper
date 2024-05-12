@@ -15,7 +15,7 @@ func NewEKeyMem(key []byte, ts time.Time) *EKeyMem {
 
 type EKeyDB struct {
 	EKeyc []byte    `db:"ekeyc"`
-	TS   time.Time `db:"ts"`
+	TS    time.Time `db:"ts"`
 }
 
 func NewEKeyDB(key []byte, ts time.Time) *EKeyDB {

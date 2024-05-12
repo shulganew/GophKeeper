@@ -33,7 +33,6 @@ func (k *Keeper) GetActualEKey() (eKey entities.EKeyMem) {
 func (k *Keeper) GetEKey(ts time.Time) (eKey *entities.EKeyMem, err error) {
 	id := slices.IndexFunc(k.eKeys, func(key entities.EKeyMem) bool { return key.TS.Equal(ts) })
 	if id != -1 {
-		zap.S().Debugln("Get eKey: ", k.eKeys[id].TS)
 		return &k.eKeys[id], nil
 	}
 	return nil, errors.New("ephemeral key not found")
@@ -121,7 +120,7 @@ func CreateEphemeralKey() (eKey []byte, ts time.Time, err error) {
 	return
 }
 
-// Create Data key. Key saved in data table "secrets", column "data_key"
+// Create Data key. Key saved in data table "secrets", column "data_key".
 func CreateDataKey() (dKey []byte, ts time.Time, err error) {
 	dKey, err = createKey(DataKeyLen)
 	ts = time.Now()
@@ -185,7 +184,7 @@ func DecodeData(dKey []byte, coded []byte) (data []byte, err error) {
 	return
 }
 
-// Get nonce and cipher from string, help func
+// Get nonce and cipher from string, help func.
 func getCryptData(key []byte) (nonce []byte, aesgcm cipher.AEAD, err error) {
 	hkey := sha256.Sum256(key)
 
@@ -281,7 +280,7 @@ func (k *Keeper) DeleteSecret(ctx context.Context, secretID string) (err error) 
 }
 
 // Get all secret from storage particular type.
-func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entities.SecretType) (secrets []entities.SecretDecoded, err error) {
+func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entities.SecretType) (secrets []*entities.SecretDecoded, err error) {
 	// Load all user's sites coded credentials from database.
 	secretsc, err := k.stor.GetSecretsStor(ctx, userID, dataType)
 	if err != nil {
@@ -309,7 +308,7 @@ func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entitie
 			return nil, err
 		}
 
-		secretDecoded := entities.SecretDecoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: secret.EKeyVer, Uploaded: secret.Uploaded}, SecretID: secret.SecretID, Data: data}
+		secretDecoded := &entities.SecretDecoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: secret.EKeyVer, Uploaded: secret.Uploaded}, SecretID: secret.SecretID, Data: data}
 		secrets = append(secrets, secretDecoded)
 	}
 	return

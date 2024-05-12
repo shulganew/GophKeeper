@@ -28,7 +28,7 @@ import (
 // Implementation from gophkeeper client.
 // Files add with two steps:
 // 1. Uplod file and return created file id in minio storage.
-// 2. Create file metadata as sectet in db with users description (definition field and file_id)
+// 2. Create file metadata as sectet in db with users description (definition field and file_id).
 type UploadReader struct {
 	file      io.Reader
 	preambule []byte
@@ -38,7 +38,7 @@ type UploadReader struct {
 }
 
 // Constructor for Upload files.
-// byte structute: |8-byte preambule with meta length| N-bytes metadata newGfile | File bytes |
+// Byte structute: |8-byte preambule with meta length| N-bytes metadata newGfile | File bytes |.
 func NewUploadReader(file io.Reader, preambule []byte, metadata []byte) *UploadReader {
 	r := new(UploadReader)
 	r.file = file
@@ -224,10 +224,10 @@ func TestGfile(t *testing.T) {
 			// List all Gfiles data.
 			_ = repo.EXPECT().
 				GetSecretsStor(gomock.Any(), gomock.Any(), gomock.Any()).
-				DoAndReturn(func(_ any, _ string, _ entities.SecretType) (gfiles []entities.SecretEncoded, err error) {
-					s := make([]entities.SecretEncoded, 0, len(storage))
+				DoAndReturn(func(_ any, _ string, _ entities.SecretType) (gfiles []*entities.SecretEncoded, err error) {
+					s := make([]*entities.SecretEncoded, 0, len(storage))
 					for _, value := range storage {
-						s = append(s, value)
+						s = append(s, &value)
 					}
 					return s, nil
 				}).
