@@ -2,8 +2,8 @@ package services
 
 import (
 	"bytes"
-	"encoding/gob"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/shulganew/GophKeeper/internal/api/jwt"
@@ -22,22 +22,23 @@ func (k *Keeper) AddGtext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decode Gtext credentials from JSON.
-	var newGtext oapi.NewGtext
-	if err := json.NewDecoder(r.Body).Decode(&newGtext); err != nil {
-		sendKeeperError(w, http.StatusBadRequest, "Invalid format for NewGtexts")
-		return
-	}
-	// Write data to storage.
-	var db bytes.Buffer
-	err = gob.NewEncoder(&db).Encode(&newGtext)
+	// Read all data from body for unmarshal and saving to sectert srorage.
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		zap.S().Errorln("Error coding Gtext to data: ", err)
+		zap.S().Errorln("Error reading body: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	secretID, _, err := k.AddSecret(r.Context(), userID, entities.TEXT, db.Bytes())
+	// Check json is correct.
+	var newGtext oapi.NewGtext
+	err = json.Unmarshal(body, &newGtext)
+	if err != nil {
+		zap.S().Errorln("Can't Read json metadata: ", err)
+		http.Error(w, "Can't Read metadata.", http.StatusInternalServerError)
+	}
+
+	secretID, err := k.AddSecret(r.Context(), userID, entities.TEXT, body)
 	if err != nil {
 		zap.S().Errorln("Error adding Gtext to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -79,7 +80,7 @@ func (k *Keeper) ListGtexts(w http.ResponseWriter, r *http.Request) {
 	gtexts := make(map[string]oapi.Gtext, len(secretDecoded))
 	for _, secret := range secretDecoded {
 		var gtext oapi.Gtext
-		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&gtext)
+		err = json.NewDecoder(bytes.NewReader(secret.Data)).Decode(&gtext)
 		if err != nil {
 			zap.S().Errorln("Error decode Gtext to data: ", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -112,22 +113,23 @@ func (k *Keeper) UpdateGtext(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Decode gtext credentials from JSON.
-	var gtext oapi.Gtext
-	if err := json.NewDecoder(r.Body).Decode(&gtext); err != nil {
-		sendKeeperError(w, http.StatusBadRequest, "Invalid format for NewSite")
-		return
-	}
-	// Write data to storage.
-	var db bytes.Buffer
-	err = gob.NewEncoder(&db).Encode(&gtext)
+	// Read all data from body for unmarshal and saving to sectert srorage.
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		zap.S().Errorln("Error coding site to data: ", err)
+		zap.S().Errorln("Error reading body: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = k.UpdateSecret(r.Context(), userID, entities.SITE, db.Bytes(), gtext.GtextID)
+	// Check json is correct.
+	var gtext oapi.Gtext
+	err = json.Unmarshal(body, &gtext)
+	if err != nil {
+		zap.S().Errorln("Can't Read json: ", err)
+		http.Error(w, "Can't Read json.", http.StatusInternalServerError)
+	}
+
+	err = k.UpdateSecret(r.Context(), userID, entities.SITE, body, gtext.GtextID)
 	if err != nil {
 		zap.S().Errorln("Error adding site to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

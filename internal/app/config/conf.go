@@ -37,7 +37,7 @@ func InitConfig() Config {
 	dsnf := flag.String("d", "", "Data Source Name for DataBase connection")
 	jwtPath := flag.String("p", "cert/jwtpkey.pem", "path to JWT private key file, ex cert/jwtpkey.pem")
 	master := flag.String("m", "NewMasterKey", "Master password for GophKeeper storage")
-	mb := flag.String("b", "gohpkeeper:GYD6J3FzdOVG49aB6Ycb:Ms37ZNWDG9CLFQhW92tA36NfgZa1zgy0z76bVmIJ", "MINIO backet for files")
+	mb := flag.String("b", "gohpkeeper:GYD6J3FzdOVG49aB6Ycb:Ms37ZNWDG9CLFQhW92tA36NfgZa1zgy0z76bVmIJ", "MINIO backet for files, format is backet:ID:Secret")
 
 	flag.Parse()
 

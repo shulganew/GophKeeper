@@ -207,32 +207,32 @@ func getCryptData(key []byte) (nonce []byte, aesgcm cipher.AEAD, err error) {
 }
 
 // Common method for all data types to store cypted data in DB.
-func (k *Keeper) AddSecret(ctx context.Context, userID string, dataType entities.SecretType, data []byte) (secretID *uuid.UUID, dKey []byte, err error) {
+func (k *Keeper) AddSecret(ctx context.Context, userID string, dataType entities.SecretType, data []byte) (secretID *uuid.UUID, err error) {
 	// Get data key.
-	dKey, _, err = CreateDataKey()
+	dKey, _, err := CreateDataKey()
 	if err != nil {
 		zap.S().Errorln("Error create data key: ", err)
-		return nil, nil, err
+		return nil,  err
 	}
 	// Encode date before store.
 	datac, err := EncodeData(dKey, data)
 	if err != nil {
 		zap.S().Errorln("Error encode data: ", err)
-		return nil, nil, err
+		return nil,  err
 	}
 	// Get Ephemeral current key.
 	eKey := k.GetActualEKey()
 	dKeyc, err := EncodeKey(dKey, eKey.EKey)
 	if err != nil {
 		zap.S().Errorln("Error getting ephemeral key: ", err)
-		return nil, nil, err
+		return nil,  err
 	}
 
 	secret := entities.NewSecretEncoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: eKey.TS, DKeyCr: dKeyc, Uploaded: time.Now()}, DataCr: datac}
 	secretID, err = k.stor.AddSecretStor(ctx, secret, dataType)
 	if err != nil {
 		zap.S().Errorln("Error adding site credentials: ", err)
-		return nil, nil, err
+		return nil,  err
 	}
 	return
 }
@@ -315,32 +315,33 @@ func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entitie
 }
 
 // Get all secret from storage by secretID.
-func (k *Keeper) GetSecret(ctx context.Context, userID string, dataType entities.SecretType, secretID string) (secret *entities.SecretDecoded, err error) {
+func (k *Keeper) GetSecret(ctx context.Context, secretID string) (secret *entities.SecretDecoded, dKey []byte, err error) {
 	// Load all user's sites coded credentials from database.
 	secretsc, err := k.stor.GetSecretStor(ctx, secretID)
+
 	if err != nil {
 		zap.S().Errorln("Error getting site credentials: ", err)
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Get ephemeral key (version from ts in db) for decode data key.
 	eKey, err := k.GetEKey(secretsc.EKeyVer)
 	if err != nil {
 		zap.S().Errorln("EKey not found: ", err)
-		return nil, err
+		return nil, nil, err
 	}
 	// Decode dKeyc
-	dKey, err := DecodeKey(secretsc.DKeyCr, eKey.EKey)
+	dKey, err = DecodeKey(secretsc.DKeyCr, eKey.EKey)
 	if err != nil {
 		zap.S().Errorln("Error decode data key: ", err)
-		return nil, err
+		return nil, nil, err
 	}
 	// Decode data.
 	data, err := DecodeData(dKey, secretsc.DataCr)
 	if err != nil {
 		zap.S().Errorln("Error decode stored data: ", err)
-		return nil, err
+		return nil, nil, err
 	}
-	secret = &entities.SecretDecoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: eKey.TS, DKeyCr: dKey, Uploaded: secretsc.Uploaded}, SecretID: secretsc.SecretID, Data: data}
+	secret = &entities.SecretDecoded{NewSecret: entities.NewSecret{UserID: secretsc.UserID, Type: secretsc.Type, EKeyVer: eKey.TS, DKeyCr: dKey, Uploaded: secretsc.Uploaded}, SecretID: secretsc.SecretID, Data: data}
 	return
 }

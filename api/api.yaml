@@ -311,21 +311,21 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
   /user/file:
     post:
-      summary: Upload file 
-      description: Upload file to s3
+      summary: Add file to DB
+      description: Add file metadata to DB
       operationId: AddGfile
       parameters:
       requestBody:
         description: Note add to the store
         required: true
         content:
-          application/octet-stream:
-              schema:
-                type: string
-                format: binary
+          application/json:
+            schema:
+              type: object
+              items:
+                $ref: '#/components/schemas/NewGfile'
       responses:
         '201':
           description: metadata added 
@@ -436,6 +436,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+    put:
+      summary: Upload file 
+      description: Upload file to s3
+      operationId: UploadGfile
+      parameters:
+        - name: fileID
+          in: path
+          description: ID of file 
+          required: true
+          schema:
+            type: string
+            format: string
+      requestBody:
+        description: Note add to the store
+        required: true
+        content:
+          application/octet-stream:
+              schema:
+                type: string
+                format: binary
+      responses:
+        '201':
+          description: file added to s3
+        '401':
+          description: not authorized
+        '500':
+          description: Internal error upload file
+        default:
+          description: unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
   /user/{secretID}:
     delete:
       summary: delet ID
@@ -455,7 +488,7 @@ paths:
         '401':
           description: User not authorized
         '500':
-          description: Internal error site listing
+          description: Internal error
         default:
           description: unexpected error
           content:

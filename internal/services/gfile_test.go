@@ -3,8 +3,6 @@ package services
 import (
 	"bytes"
 	"context"
-	"encoding/binary"
-	"encoding/gob"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -24,60 +22,6 @@ import (
 	"github.com/shulganew/GophKeeper/internal/api/jwt"
 	"github.com/stretchr/testify/require"
 )
-
-// Implementation from gophkeeper client.
-// Files add with two steps:
-// 1. Uplod file and return created file id in minio storage.
-// 2. Create file metadata as sectet in db with users description (definition field and file_id).
-type UploadReader struct {
-	file      io.Reader
-	preambule []byte
-	metadata  []byte
-	index     int64
-	metaLen   int64
-}
-
-// Constructor for Upload files.
-// Byte structute: |8-byte preambule with meta length| N-bytes metadata newGfile | File bytes |.
-func NewUploadReader(file io.Reader, preambule []byte, metadata []byte) *UploadReader {
-	r := new(UploadReader)
-	r.file = file
-	r.preambule = preambule
-	r.metadata = metadata
-	r.metaLen = int64(len(r.metadata))
-	return r
-}
-
-// Read to b []byte preambule, then metadata, then original file.
-func (r *UploadReader) Read(b []byte) (totlal int, err error) {
-	// Add preambule bytes (PreambleLeth), witch contains lenth of metadata (newGfile)
-	if r.index < PreambleLeth {
-		n := copy(b, r.preambule[r.index:PreambleLeth])
-		r.index += int64(n)
-		totlal += n
-	}
-
-	// Add metadata bytes - newGfiles object.
-	if r.index >= PreambleLeth && r.index < PreambleLeth+r.metaLen {
-		n := copy(b[PreambleLeth:], r.metadata[r.index-PreambleLeth:r.metaLen])
-		r.index += int64(n)
-		totlal += n
-	}
-	// Add file bytes
-	if r.index >= PreambleLeth+r.metaLen {
-		bf := make([]byte, len(b)-totlal)
-		fn, err := r.file.Read(bf)
-		if err != nil {
-			return totlal, err
-		}
-		n := copy(b[totlal:totlal+fn], bf)
-		r.index += int64(n)
-		totlal += n
-		return totlal, nil
-
-	}
-	return
-}
 
 func TestGfile(t *testing.T) {
 	tests := []struct {
@@ -170,6 +114,8 @@ func TestGfile(t *testing.T) {
 
 			// Test s3 storage, map[fileID]filebytes
 			fileStorage := make(map[string][]byte)
+
+			// Moks.
 			_ = repo.EXPECT().
 				AddSecretStor(gomock.Any(), gomock.Any(), gomock.Any()).
 				DoAndReturn(func(_ any, e entities.NewSecretEncoded, types entities.SecretType) (*uuid.UUID, error) {
@@ -177,6 +123,14 @@ func TestGfile(t *testing.T) {
 					require.NoError(t, err)
 					storage[fileID.String()] = entities.SecretEncoded{SecretID: fileID, NewSecret: e.NewSecret, DataCr: e.DataCr}
 					return &fileID, nil
+				}).
+				AnyTimes()
+
+			_ = repo.EXPECT().
+				GetSecretStor(gomock.Any(), gomock.Any()).
+				DoAndReturn(func(_ any, fileID string) (texts *entities.SecretEncoded, err error) {
+					gfile := storage[fileID]
+					return &gfile, nil
 				}).
 				AnyTimes()
 
@@ -195,30 +149,18 @@ func TestGfile(t *testing.T) {
 			require.NoError(t, err)
 
 			for i, nfile := range tt.nGfiles {
-				// Create file
-				// Encode nfile as metadata to binary
-				var md bytes.Buffer
-				err = gob.NewEncoder(&md).Encode(&nfile)
-				require.NoError(t, err)
-
-				metadata := md.Bytes()
-				// Write preambule - size of newGfile object (metadata).
-				p := make([]byte, PreambleLeth)
-				mLen := uint64(len(metadata))
-				zap.S().Debugln("Metadata length: ", mLen)
-				binary.LittleEndian.PutUint64(p, mLen)
-
-				ur := NewUploadReader(bytes.NewReader(tt.files[i]), p, metadata)
-				body, err := io.ReadAll(ur)
-				require.NoError(t, err)
-				// Create request.
-				rr := testutil.NewRequest().Post(tt.requestPath).WithContentType("application/octet-stream").WithBody(body).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
+				// Add meta to db.
+				rr := testutil.NewRequest().Post(tt.requestPath).WithContentType("application/json").WithJsonBody(nfile).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
 				require.Equal(t, tt.statusAdd, rr.Code)
 
 				var resultGfile oapi.Gfile
 				err = json.NewDecoder(rr.Body).Decode(&resultGfile)
 				require.NoError(t, err, "error unmarshaling response")
 				t.Log("Result: ", resultGfile)
+
+				// Put file to storage.
+				rr = testutil.NewRequest().Put(tt.requestPath+"/"+resultGfile.GfileID).WithContentType("application/octet-stream").WithBody(tt.files[i]).WithHeader("Authorization", config.AuthPrefix+string(allowAll)).GoWithHTTPHandler(t, rt).Recorder
+				require.Equal(t, tt.statusPut, rr.Code)
 			}
 
 			// List all Gfiles data.

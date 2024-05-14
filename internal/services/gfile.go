@@ -2,9 +2,6 @@ package services
 
 import (
 	"bytes"
-	"encoding/binary"
-	"encoding/gob"
-	"encoding/hex"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -17,11 +14,9 @@ import (
 	"go.uber.org/zap"
 )
 
-const PreambleLeth = 8
+const MaxFileSize = units.Mebibyte * 30
 
-// Files add with two steps:
-// 1. Uplod file and return created file id in minio storage.
-// 2. Create file metadata as sectet in db with users description (definition field and file_id).
+// Create file metadata as sectet in db with users description (definition file name, file_id and file zise+check file size).
 func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 	// Get userID from jwt.
 	userID, err := jwt.GetUserID(k.ua, r)
@@ -30,85 +25,35 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
-
-	// Get file readcloser from body.
-	fr := r.Body
-	// Get preablule with lenth of metadata
-	preamble := make([]byte, PreambleLeth)
-	_, err = fr.Read(preamble)
+	// Read all data from body for unmarshal and saving to sectert srorage.
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Can't Read preambule.", http.StatusInternalServerError)
-	}
-
-	// Read as uint64  value for metadatadata length.
-	data := binary.LittleEndian.Uint64(preamble)
-	meta := make([]byte, data)
-	_, err = fr.Read(meta)
-	if err != nil {
-		zap.S().Errorln("Can't Read preambule: ", err)
-		http.Error(w, "Can't Read preambule.", http.StatusInternalServerError)
-	}
-
-	// Encode nfile as metadata to binary
-	var nfile oapi.NewGfile
-	err = gob.NewDecoder(bytes.NewReader(meta)).Decode(&nfile)
-	if err != nil {
-		zap.S().Errorln("Can't Read metadata: ", err)
-		http.Error(w, "Can't Read metadata.", http.StatusInternalServerError)
-	}
-
-	// Encode data.
-	var db bytes.Buffer
-	err = gob.NewEncoder(&db).Encode(&nfile)
-	if err != nil {
-		zap.S().Errorln("Error coding Gfile to data: ", err)
+		zap.S().Errorln("Error reading body: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// Decode nfile as metadata to binary.
+	var nfile oapi.NewGfile
+	err = json.Unmarshal(body, &nfile)
+	if err != nil {
+		zap.S().Errorln("Can't Read json metadata: ", err)
+		http.Error(w, "Can't Read metadata.", http.StatusInternalServerError)
+	}
+
 	// File size constrain 30 MIB.
-	if nfile.Size > int64(units.Mebibyte*30) {
+	if nfile.Size > int64(MaxFileSize) {
 		zap.S().Errorln("File too big. : ", err)
 		http.Error(w, "File too big, size less 30MiB", http.StatusBadRequest)
 		return
 	}
 
 	// Save file metadata newGfile to DB.
-	gfileID, dKey, err := k.AddSecret(r.Context(), userID, entities.FILE, db.Bytes())
+	gfileID, err := k.AddSecret(r.Context(), userID, entities.FILE, body)
 	if err != nil {
 		zap.S().Errorln("Error adding gfile to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-	}
-
-	// Encode data before updloading.
-	zap.S().Debugln("data key add: ", hex.EncodeToString(dKey))
-
-	dataF, err := io.ReadAll(fr)
-	if err != nil {
-		zap.S().Errorln("Error read file data: ", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	defer func() {
-		err := fr.Close()
-		if err != nil {
-			zap.S().Errorln("Can't close minio: ", err)
-		}
-	}()
-
-	dataFc, err := EncodeData(dKey, dataF)
-	if err != nil {
-		zap.S().Errorln("Error decode data: ", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	// Upload file to minio
-	err = k.fstor.UploadFile(r.Context(), k.conf.Backetmi, gfileID.String(), bytes.NewBuffer(dataFc))
-	if err != nil {
-		zap.S().Errorln("Can't upload: ", err)
-		http.Error(w, "Can't upload file fo s3.", http.StatusInternalServerError)
 	}
 
 	// Return created gfile to client in responce (client add it to client's mem storage)
@@ -120,9 +65,53 @@ func (k *Keeper) AddGfile(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(gfile)
 	if err != nil {
-		zap.S().Errorln("Can't write to response in Addgfile handler", err)
+		zap.S().Errorln("Can't write to response in AddGfile handler", err)
 	}
 	zap.S().Debugln("gfile credentials added. ", gfile.GfileID, " ", gfile.Definition)
+}
+
+// Uplod file and return created file id in minio storage.
+func (k *Keeper) UploadGfile(w http.ResponseWriter, r *http.Request, fileID string) {
+	// Read file data.
+	dataF, err := io.ReadAll(r.Body)
+	if err != nil {
+		zap.S().Errorln("Error read file data: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// Load all user's gfile meta from database.
+	secretDecoded, dKey, err := k.GetSecret(r.Context(), fileID)
+	if err != nil {
+		zap.S().Errorln("Error getting Gfile credentials: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if secretDecoded == nil {
+		zap.S().Infoln("File not found")
+		http.Error(w, "file not found", http.StatusInternalServerError)
+		return
+	}
+
+	// Encode file data with key from metadate secret.
+	dataFc, err := EncodeData(dKey, dataF)
+	if err != nil {
+		zap.S().Errorln("Error decode data: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Upload file to minio.
+	err = k.fstor.UploadFile(r.Context(), k.conf.Backetmi, fileID, bytes.NewBuffer(dataFc))
+	if err != nil {
+		zap.S().Errorln("Can't upload: ", err)
+		http.Error(w, "Can't upload file fo s3.", http.StatusInternalServerError)
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+
+	// Set status code 200.
+	w.WriteHeader(http.StatusOK)
+	zap.S().Debugln("gfile credentials uploaded. ")
 }
 
 // Return add gfiles metadata from DB.
@@ -147,7 +136,7 @@ func (k *Keeper) ListGfiles(w http.ResponseWriter, r *http.Request) {
 	gfiles := make(map[string]oapi.Gfile, len(secretDecoded))
 	for _, secret := range secretDecoded {
 		var gfile oapi.Gfile
-		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&gfile)
+		err = json.NewDecoder(bytes.NewReader(secret.Data)).Decode(&gfile)
 		if err != nil {
 			zap.S().Errorln("Error decode gfile to data: ", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -169,21 +158,12 @@ func (k *Keeper) ListGfiles(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		zap.S().Errorln("Can't write to response in Listgfiles handler", err)
 	}
-
 }
 
 // Return gfile from storage, fileID == secretID (+) entities.FILE.
 func (k *Keeper) GetGfile(w http.ResponseWriter, r *http.Request, fileID string) {
-	// Get userID from jwt.
-	userID, err := jwt.GetUserID(k.ua, r)
-	if err != nil {
-		zap.S().Errorln("Error getting userID: ", err)
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
 	zap.S().Debugln("File id:", fileID)
-	_, err = uuid.FromString(fileID)
+	_, err := uuid.FromString(fileID)
 	if err != nil {
 		zap.S().Errorln("file ID not correct: ", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -191,7 +171,7 @@ func (k *Keeper) GetGfile(w http.ResponseWriter, r *http.Request, fileID string)
 	}
 	// Get Gfile from DB.
 	// Load all user's gfiles from database.
-	secretDecoded, err := k.GetSecret(r.Context(), userID, entities.FILE, fileID)
+	secretDecoded, _, err := k.GetSecret(r.Context(), fileID)
 	if err != nil {
 		zap.S().Errorln("Error getting Gfile credentials: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -205,7 +185,7 @@ func (k *Keeper) GetGfile(w http.ResponseWriter, r *http.Request, fileID string)
 
 	// Load decoded data and decode binary data to oapi.gfile.
 	var gfile oapi.Gfile
-	err = gob.NewDecoder(bytes.NewReader(secretDecoded.Data)).Decode(&gfile)
+	err = json.NewDecoder(bytes.NewReader(secretDecoded.Data)).Decode(&gfile)
 	if err != nil {
 		zap.S().Errorln("Error decode gfile to data: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

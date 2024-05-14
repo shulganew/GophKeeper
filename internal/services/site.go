@@ -2,8 +2,8 @@ package services
 
 import (
 	"bytes"
-	"encoding/gob"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/shulganew/GophKeeper/internal/api/jwt"
@@ -21,22 +21,23 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
-
-	var newSite oapi.NewSite
-	if err := json.NewDecoder(r.Body).Decode(&newSite); err != nil {
-		sendKeeperError(w, http.StatusBadRequest, "Invalid format for NewSite")
-		return
-	}
-	// Write data to storage.
-	var db bytes.Buffer
-	err = gob.NewEncoder(&db).Encode(&newSite)
+	// Read all data from body for unmarshal and saving to sectert srorage.
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		zap.S().Errorln("Error coding site to data: ", err)
+		zap.S().Errorln("Error reading body: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	secretID, _, err := k.AddSecret(r.Context(), userID, entities.SITE, db.Bytes())
+	// Check json is correct.
+	var newSite oapi.NewSite
+	err = json.Unmarshal(body, &newSite)
+	if err != nil {
+		zap.S().Errorln("Can't Read json: ", err)
+		http.Error(w, "Can't Read json.", http.StatusInternalServerError)
+	}
+
+	secretID, err := k.AddSecret(r.Context(), userID, entities.SITE, body)
 	if err != nil {
 		zap.S().Errorln("Error adding site to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -76,7 +77,7 @@ func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
 	sites := make(map[string]oapi.Site, len(secretDecoded))
 	for _, secret := range secretDecoded {
 		var site oapi.Site
-		err = gob.NewDecoder(bytes.NewReader(secret.Data)).Decode(&site)
+		err = json.NewDecoder(bytes.NewReader(secret.Data)).Decode(&site)
 		if err != nil {
 			zap.S().Errorln("Error decode site to data: ", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -109,22 +110,23 @@ func (k *Keeper) UpdateSite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
-	// Decode site credentials from JSON.
-	var site oapi.Site
-	if err := json.NewDecoder(r.Body).Decode(&site); err != nil {
-		sendKeeperError(w, http.StatusBadRequest, "Invalid format for NewSite")
-		return
-	}
-	// Write data to storage.
-	var db bytes.Buffer
-	err = gob.NewEncoder(&db).Encode(&site)
+	// Read all data from body for unmarshal and saving to sectert srorage.
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		zap.S().Errorln("Error coding site to data: ", err)
+		zap.S().Errorln("Error reading body: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	err = k.UpdateSecret(r.Context(), userID, entities.SITE, db.Bytes(), site.SiteID)
+	// Check json is correct.
+	var site oapi.Site
+	err = json.Unmarshal(body, &site)
+	if err != nil {
+		zap.S().Errorln("Can't Read json site data: ", err)
+		http.Error(w, "Can't Read json site data.", http.StatusInternalServerError)
+	}
+
+	err = k.UpdateSecret(r.Context(), userID, entities.SITE, body, site.SiteID)
 	if err != nil {
 		zap.S().Errorln("Error adding site to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
