@@ -92,43 +92,11 @@ linters-settings:
 
   gocritic:
     enabled-checks:
-      - appendAssign
       - appendCombine
-      - argOrder
-      - assignOp
-      - badCall
-      - badCond
-      - captLocal
-      - caseOrder
-      - commentFormatting
-      - defaultCaseOrder
-      - deprecatedComment
-      - dupArg
-      - dupBranchBody
-      - dupCase
-      - dupSubExpr
-      - elseif
-      - exitAfterDefer
-      - flagDeref
-      - flagName
-      - ifElseChain
       - indexAlloc
-      - mapKey
-      - newDeref
-      - offBy1
       - rangeExprCopy
       - rangeValCopy
-      - regexpMust
-      - singleCaseSwitch
-      - sloppyLen
       - stringXbytes
-      - switchTrue
-      - typeSwitchVar
-      - underef
-      - unlambda
-      - unslice
-      - valSwap
-      - wrapperFunc
 
   godot:
     capital: true
@@ -376,7 +344,7 @@ linters:
     # - goprintffuncname
     # - gosec
     # - gosimple
-    # - govet
+    - govet
     # - grouper
     # - ineffassign
     # - lll

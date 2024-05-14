@@ -25,22 +25,22 @@ func (s *SecretType) String() string {
 // id will be retruned by DB
 // !!! Each encodeted date type has own ID, for ex Gfile has gfileID, whitch equal secredtID in database. For ex secredtID type FILE == gfileID.
 type NewSecret struct {
-	UserID   string     `db:"user_id"`
 	Type     SecretType `db:"type"` // Type of data - Site data, Credit card, Text or file.
 	EKeyVer  time.Time  `db:"ekey_version"`
-	DKeyCr   []byte     `db:"dkey"`
 	Uploaded time.Time  `db:"uploaded"`
+	UserID   string     `db:"user_id"`
+	DKeyCr   []byte     `db:"dkey"`
 }
 type SecretDecoded struct {
 	NewSecret
-	SecretID uuid.UUID
 	Data     []byte
+	SecretID uuid.UUID
 }
 
 type SecretEncoded struct {
 	NewSecret
-	SecretID uuid.UUID `db:"secret_id"` // Stored secretID.
 	DataCr   []byte    `db:"data"`      // Decrypted data.
+	SecretID uuid.UUID `db:"secret_id"` // Stored secretID.
 }
 
 type NewSecretDecoded struct {

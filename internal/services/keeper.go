@@ -27,8 +27,8 @@ type Keeper struct {
 	stor  Keeperer
 	fstor FileKeeper
 	conf  config.Config
-	eKeys []entities.EKeyMem // Decoded ephemeral keys.
 	ua    *jwt.UserAuthenticator
+	eKeys []entities.EKeyMem // Decoded ephemeral keys.
 }
 
 func NewKeeper(ctx context.Context, stor Keeperer, fstor FileKeeper, conf config.Config, ua *jwt.UserAuthenticator) *Keeper {

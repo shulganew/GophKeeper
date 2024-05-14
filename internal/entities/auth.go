@@ -7,9 +7,9 @@ type CtxPassKey struct{}
 
 // Send values through middleware in context.
 type AuthContext struct {
-	userID       uuid.UUID
-	isRegistered bool
 	jwt          string
+	isRegistered bool
+	userID       uuid.UUID
 }
 
 func NewAuthContext(userID uuid.UUID, jwt string, isRegistered bool) AuthContext {
