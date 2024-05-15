@@ -5,8 +5,8 @@ import (
 )
 
 type EKeyMem struct {
-	EKey []byte
 	TS   time.Time
+	EKey []byte
 }
 
 func NewEKeyMem(key []byte, ts time.Time) *EKeyMem {
@@ -14,8 +14,8 @@ func NewEKeyMem(key []byte, ts time.Time) *EKeyMem {
 }
 
 type EKeyDB struct {
+	TS    time.Time `db:"ts"`
 	EKeyc []byte    `db:"ekeyc"`
-	TS   time.Time `db:"ts"`
 }
 
 func NewEKeyDB(key []byte, ts time.Time) *EKeyDB {

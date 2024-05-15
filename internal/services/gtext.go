@@ -12,8 +12,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// Add new site credentials: site, login and password.
-func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
+// Add new Gtext.
+func (k *Keeper) AddGtext(w http.ResponseWriter, r *http.Request) {
 	// Get userID from jwt.
 	userID, err := jwt.GetUserID(k.ua, r)
 	if err != nil {
@@ -21,6 +21,7 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
+
 	// Read all data from body for unmarshal and saving to sectert srorage.
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -30,34 +31,35 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check json is correct.
-	var newSite oapi.NewSite
-	err = json.Unmarshal(body, &newSite)
+	var newGtext oapi.NewGtext
+	err = json.Unmarshal(body, &newGtext)
 	if err != nil {
-		zap.S().Errorln("Can't Read json: ", err)
-		http.Error(w, "Can't Read json.", http.StatusInternalServerError)
+		zap.S().Errorln("Can't Read json metadata: ", err)
+		http.Error(w, "Can't Read metadata.", http.StatusInternalServerError)
 	}
 
-	secretID, err := k.AddSecret(r.Context(), userID, entities.SITE, body)
+	secretID, err := k.AddSecret(r.Context(), userID, entities.TEXT, body)
 	if err != nil {
-		zap.S().Errorln("Error adding site to DB: ", err)
+		zap.S().Errorln("Error adding Gtext to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// Return created site to client in responce (client add it to client's mem storage)
-	site := oapi.Site{SiteID: secretID.String(), Definition: newSite.Definition, Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
+
+	// Return created gtext to client in responce (client add it to client's mem storage)
+	gtext := oapi.Gtext{GtextID: secretID.String(), Definition: newGtext.Definition, Note: newGtext.Note}
 	w.Header().Add("Content-Type", "application/json")
 
 	// set status code 201
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(site)
+	err = json.NewEncoder(w).Encode(gtext)
 	if err != nil {
-		zap.S().Errorln("Can't write to response in AddSite handler", err)
+		zap.S().Errorln("Can't write to response in AddGtext handler", err)
 	}
-	zap.S().Debugln("Site credentials added. ", site.SiteID, " ", site.Site)
+	zap.S().Debugln("Gtext credentials added. ", gtext.GtextID, " ", gtext.Definition)
 }
 
-// List all users sites with credentials.
-func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
+// List all created Gtexts.
+func (k *Keeper) ListGtexts(w http.ResponseWriter, r *http.Request) {
 	// Get userID from jwt.
 	userID, err := jwt.GetUserID(k.ua, r)
 	if err != nil {
@@ -66,43 +68,43 @@ func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Load all user's sites credentials from database.
-	secretDecoded, err := k.GetSecrets(r.Context(), userID, entities.SITE)
+	// Load all user's Gtexts from database.
+	secretDecoded, err := k.GetSecrets(r.Context(), userID, entities.TEXT)
 	if err != nil {
-		zap.S().Errorln("Error getting site credentials: ", err)
+		zap.S().Errorln("Error getting Gtext credentials: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// Load decoded data and decode binary data to oapi.Site.
-	sites := make(map[string]oapi.Site, len(secretDecoded))
+
+	// Load decoded data and decode binary data to oapi.Gtext.
+	gtexts := make(map[string]oapi.Gtext, len(secretDecoded))
 	for _, secret := range secretDecoded {
-		var site oapi.Site
-		err = json.NewDecoder(bytes.NewReader(secret.Data)).Decode(&site)
+		var gtext oapi.Gtext
+		err = json.NewDecoder(bytes.NewReader(secret.Data)).Decode(&gtext)
 		if err != nil {
-			zap.S().Errorln("Error decode site to data: ", err)
+			zap.S().Errorln("Error decode Gtext to data: ", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		site.SiteID = secret.SecretID.String()
-		sites[site.SiteID] = site
+		gtext.GtextID = secret.SecretID.String()
+		gtexts[gtext.GtextID] = gtext
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	if len(sites) == 0 {
+	if len(gtexts) == 0 {
 		zap.S().Infoln("No content.")
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 	// Set status code 200.
 	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(sites)
+	err = json.NewEncoder(w).Encode(gtexts)
 	if err != nil {
-		zap.S().Errorln("Can't write to response in ListSite handler", err)
+		zap.S().Errorln("Can't write to response in ListGtexts handler", err)
 	}
 }
 
-// Site data update.
-func (k *Keeper) UpdateSite(w http.ResponseWriter, r *http.Request) {
+func (k *Keeper) UpdateGtext(w http.ResponseWriter, r *http.Request) {
 	// Get userID from jwt.
 	userID, err := jwt.GetUserID(k.ua, r)
 	if err != nil {
@@ -110,6 +112,7 @@ func (k *Keeper) UpdateSite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
+
 	// Read all data from body for unmarshal and saving to sectert srorage.
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -119,14 +122,14 @@ func (k *Keeper) UpdateSite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check json is correct.
-	var site oapi.Site
-	err = json.Unmarshal(body, &site)
+	var gtext oapi.Gtext
+	err = json.Unmarshal(body, &gtext)
 	if err != nil {
-		zap.S().Errorln("Can't Read json site data: ", err)
-		http.Error(w, "Can't Read json site data.", http.StatusInternalServerError)
+		zap.S().Errorln("Can't Read json: ", err)
+		http.Error(w, "Can't Read json.", http.StatusInternalServerError)
 	}
 
-	err = k.UpdateSecret(r.Context(), userID, entities.SITE, body, site.SiteID)
+	err = k.UpdateSecret(r.Context(), userID, entities.SITE, body, gtext.GtextID)
 	if err != nil {
 		zap.S().Errorln("Error adding site to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -12,8 +12,8 @@ import (
 	"go.uber.org/zap"
 )
 
-// Add new site credentials: site, login and password.
-func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
+// Add new card.
+func (k *Keeper) AddCard(w http.ResponseWriter, r *http.Request) {
 	// Get userID from jwt.
 	userID, err := jwt.GetUserID(k.ua, r)
 	if err != nil {
@@ -30,34 +30,35 @@ func (k *Keeper) AddSite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check json is correct.
-	var newSite oapi.NewSite
-	err = json.Unmarshal(body, &newSite)
+	var newCard oapi.NewCard
+	err = json.Unmarshal(body, &newCard)
 	if err != nil {
 		zap.S().Errorln("Can't Read json: ", err)
 		http.Error(w, "Can't Read json.", http.StatusInternalServerError)
 	}
 
-	secretID, err := k.AddSecret(r.Context(), userID, entities.SITE, body)
+	secretID, err := k.AddSecret(r.Context(), userID, entities.CARD, body)
 	if err != nil {
-		zap.S().Errorln("Error adding site to DB: ", err)
+		zap.S().Errorln("Error adding card to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// Return created site to client in responce (client add it to client's mem storage)
-	site := oapi.Site{SiteID: secretID.String(), Definition: newSite.Definition, Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
+
+	// Return created card to client in responce (client add it to client's mem storage)
+	card := oapi.Card{CardID: secretID.String(), Definition: newCard.Definition, Ccn: newCard.Ccn, Exp: newCard.Exp, Cvv: newCard.Cvv, Hld: newCard.Hld}
 	w.Header().Add("Content-Type", "application/json")
 
 	// set status code 201
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(site)
+	err = json.NewEncoder(w).Encode(card)
 	if err != nil {
-		zap.S().Errorln("Can't write to response in AddSite handler", err)
+		zap.S().Errorln("Can't write to response in AddCard handler", err)
 	}
-	zap.S().Debugln("Site credentials added. ", site.SiteID, " ", site.Site)
+	zap.S().Debugln("Card credentials added. ", card.CardID, " ", card.Definition)
 }
 
-// List all users sites with credentials.
-func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
+// List all created cards.
+func (k *Keeper) ListCards(w http.ResponseWriter, r *http.Request) {
 	// Get userID from jwt.
 	userID, err := jwt.GetUserID(k.ua, r)
 	if err != nil {
@@ -66,43 +67,43 @@ func (k *Keeper) ListSites(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Load all user's sites credentials from database.
-	secretDecoded, err := k.GetSecrets(r.Context(), userID, entities.SITE)
+	// Load all user's cards from database.
+	secretDecoded, err := k.GetSecrets(r.Context(), userID, entities.CARD)
 	if err != nil {
-		zap.S().Errorln("Error getting site credentials: ", err)
+		zap.S().Errorln("Error getting card credentials: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// Load decoded data and decode binary data to oapi.Site.
-	sites := make(map[string]oapi.Site, len(secretDecoded))
+
+	// Load decoded data and decode binary data to oapi.Card.
+	cards := make(map[string]oapi.Card, len(secretDecoded))
 	for _, secret := range secretDecoded {
-		var site oapi.Site
-		err = json.NewDecoder(bytes.NewReader(secret.Data)).Decode(&site)
+		var card oapi.Card
+		err = json.NewDecoder(bytes.NewReader(secret.Data)).Decode(&card)
 		if err != nil {
-			zap.S().Errorln("Error decode site to data: ", err)
+			zap.S().Errorln("Error decode card to data: ", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		site.SiteID = secret.SecretID.String()
-		sites[site.SiteID] = site
+		card.CardID = secret.SecretID.String()
+		cards[card.CardID] = card
 	}
 
 	w.Header().Add("Content-Type", "application/json")
-	if len(sites) == 0 {
+	if len(cards) == 0 {
 		zap.S().Infoln("No content.")
 		w.WriteHeader(http.StatusNoContent)
 		return
 	}
 	// Set status code 200.
 	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(sites)
+	err = json.NewEncoder(w).Encode(cards)
 	if err != nil {
-		zap.S().Errorln("Can't write to response in ListSite handler", err)
+		zap.S().Errorln("Can't write to response in ListCards handler", err)
 	}
 }
 
-// Site data update.
-func (k *Keeper) UpdateSite(w http.ResponseWriter, r *http.Request) {
+func (k *Keeper) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	// Get userID from jwt.
 	userID, err := jwt.GetUserID(k.ua, r)
 	if err != nil {
@@ -110,6 +111,7 @@ func (k *Keeper) UpdateSite(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
+
 	// Read all data from body for unmarshal and saving to sectert srorage.
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -119,14 +121,27 @@ func (k *Keeper) UpdateSite(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check json is correct.
-	var site oapi.Site
-	err = json.Unmarshal(body, &site)
+	var card oapi.Card
+	err = json.Unmarshal(body, &card)
 	if err != nil {
-		zap.S().Errorln("Can't Read json site data: ", err)
-		http.Error(w, "Can't Read json site data.", http.StatusInternalServerError)
+		zap.S().Errorln("Can't Read json: ", err)
+		http.Error(w, "Can't Read json.", http.StatusInternalServerError)
 	}
 
-	err = k.UpdateSecret(r.Context(), userID, entities.SITE, body, site.SiteID)
+	err = k.UpdateSecret(r.Context(), userID, entities.SITE, body, card.CardID)
+	if err != nil {
+		zap.S().Errorln("Error adding site to DB: ", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// set status code 200
+	w.WriteHeader(http.StatusOK)
+}
+
+// Delelete card data.
+func (k *Keeper) DelCard(w http.ResponseWriter, r *http.Request, cardID string) {
+	err := k.DeleteSecret(r.Context(), cardID)
 	if err != nil {
 		zap.S().Errorln("Error adding site to DB: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

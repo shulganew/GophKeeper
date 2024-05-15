@@ -7,8 +7,12 @@ import (
 	"syscall"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/shulganew/GophKeeper/internal/app/config"
-	"github.com/shulganew/GophKeeper/internal/storage"
+	"github.com/shulganew/GophKeeper/internal/storage/pg"
+	"github.com/shulganew/GophKeeper/internal/storage/s3"
+
 	"go.uber.org/zap"
 )
 
@@ -39,8 +43,7 @@ func InitContext() (ctx context.Context, cancel context.CancelFunc) {
 	return
 }
 
-func InitStore(ctx context.Context, conf config.Config) (stor *storage.Repo, err error) {
-
+func InitStore(ctx context.Context, conf config.Config) (stor *pg.Repo, err error) {
 	// Connection for Keeper Database.
 	db, err := sqlx.Connect(config.DataBaseType, conf.DSN)
 	if err != nil {
@@ -48,11 +51,28 @@ func InitStore(ctx context.Context, conf config.Config) (stor *storage.Repo, err
 	}
 
 	// Load storage.
-	stor, err = storage.NewRepo(ctx, db)
+	stor, err = pg.NewRepo(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
 	zap.S().Infoln("Application init complite")
 	return stor, nil
+}
+
+func InitMinIO(ctx context.Context, conf config.Config) (fstor *s3.FileRepo, err error) {
+	// Connection for Keeper MINIO.
+	mio, err := minio.New("localhost:9000", &minio.Options{
+		Creds:  credentials.NewStaticV4(conf.IDmi, conf.Secretmi, ""),
+		Secure: false,
+	})
+	if err != nil {
+		return nil, err
+	}
+	// Load file storage.
+	fstor, err = s3.NewFileRepo(ctx, conf.Backetmi, mio)
+	if err != nil {
+		return nil, err
+	}
+	return
 }

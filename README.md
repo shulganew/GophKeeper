@@ -1,6 +1,52 @@
 # GophKeeper
 Password keeper - server (Yandex praktikum final project)
 
+
+## minIO
+install
+https://min.io/docs/minio/container/index.html
+
+
+
+
+Get and set data : habr example
+https://habr.com/ru/companies/ozontech/articles/586024/?code=9040949a58b797539b7c7d5b3a3462e2&state=Zfbrcwb5DSFDKXKFDgu6bkBC&hl=ru
+
+## Create certificates
+
+Generate private key:
+```
+openssl genrsa -out pkey.pem 2048
+```
+Generate CSR: (In the "Common Name" set the domain of your service provider app)
+```
+openssl req -new -key pkey.pem -out server.csr
+```
+
+Generate Self Signed Cert
+```
+openssl x509 -req -days 365 -in server.csr -signkey pkey.pem -out pkey.crt
+rm pkey.pem
+```
+
+
+## Mock generate 
+
+```bash
+go install github.com/golang/mock/mockgen@v1.6.0
+go get github.com/golang/mock/gomock
+
+```
+
+```bash
+mockgen -source=internal/services/keeper.go \
+    -destination=internal/services/mocks/keeper.gen.go \
+    -package=mocks
+
+
+```
+
+
 ## Generate oapi
 Use make or bash command or //TODO build generate
 ```
@@ -12,9 +58,11 @@ go run github.com/deepmap/oapi-codegen/v2/cmd/oapi-codegen --config=internal/res
 /home/igor/Desktop/code/GophKeeper/internal/rest/oapi/keeper.yaml
 ## Mock
 ```bash
-mockgen -source=internal/services/user.go \
-    -destination=internal/services/mocks/user.gen.go \
+mockgen -source=internal/services/keeper.go \
+    -destination=internal/services/mocks/keeper.gen.go \
     -package=mocks
+```
+-destination mock-interfaces.go github.com/yourhandle/worker Doer
 ```
 
 ## Переменные окружения
@@ -47,3 +95,21 @@ migrations up in make file during database startup
 ```bash
 make pg-stop
 ```
+
+## Git - remove file with git ignore, when it already added.
+git rm --cached internal/api/oapi/gokeeper.gen.go
+//git reset internal/api/oapi/gokeeper.gen.go
+
+## Curl tests
+
+
+## Private key for JWT token
+PrivateKey is an ECDSA private key which was generated with the following
+command:
+
+```bash
+openssl ecparam -name prime256v1 -genkey -noout -out cert/jwtpkey.pem
+```
+We are using a hard coded key here in this example, but in real applications,
+you would never do this. Your JWT signing key must never be in your application,
+only the public key.

@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
+	"errors"
 	"slices"
 	"time"
 
@@ -29,12 +30,12 @@ func (k *Keeper) GetActualEKey() (eKey entities.EKeyMem) {
 }
 
 // Get key from memory by time stamp (ts used as key version).
-func (k *Keeper) GetEKey(ts time.Time) (eKey entities.EKeyMem) {
+func (k *Keeper) GetEKey(ts time.Time) (eKey *entities.EKeyMem, err error) {
 	id := slices.IndexFunc(k.eKeys, func(key entities.EKeyMem) bool { return key.TS.Equal(ts) })
 	if id != -1 {
-		return k.eKeys[id]
+		return &k.eKeys[id], nil
 	}
-	return
+	return nil, errors.New("ephemeral key not found")
 }
 
 // Load all keys to ekeys key ring, (last time stamp), with master key encoding.
@@ -63,7 +64,8 @@ func (k *Keeper) LoadKeyRing(ctx context.Context) {
 		// Decode keys using master key.
 		eKey, err := DecodeKey(eKeyc.EKeyc, []byte(k.conf.MasterKey))
 		if err != nil {
-			zap.S().Errorln("Error Decode eKeys: ", err)
+			//
+			zap.S().Fatalln("Master key not valid. Exit. ", err)
 		}
 		eKeys = append(eKeys, entities.EKeyMem{TS: eKeyc.TS, EKey: eKey})
 	}
@@ -86,6 +88,31 @@ func (k *Keeper) SaveKeyRing(ctx context.Context, eKey entities.EKeyMem) {
 	}
 }
 
+// Save all eKeys from mem to storage.
+func (k *Keeper) SaveKeysRing(ctx context.Context) {
+	for _, eKey := range k.eKeys {
+		// Encode keys using master key.
+		eKeyc, err := EncodeKey(eKey.EKey, []byte(k.conf.MasterKey))
+		if err != nil {
+			zap.S().Errorln("Error Encoding eKey: ", err)
+		}
+		// Save to database coded key.
+		err = k.stor.SaveEKeyc(ctx, entities.EKeyDB{TS: eKey.TS, EKeyc: eKeyc})
+		if err != nil {
+			zap.S().Errorln("Error save eKeyc to DB: ", err)
+		}
+	}
+}
+
+// Drop  database with eKeys.
+func (k *Keeper) DropKeyRing(ctx context.Context) {
+	// Drop keys
+	err := k.stor.DropKeys(ctx)
+	if err != nil {
+		zap.S().Errorln("Error save eKeyc to DB: ", err)
+	}
+}
+
 // Create new Ephemeral key.
 func CreateEphemeralKey() (eKey []byte, ts time.Time, err error) {
 	eKey, err = createKey(EphemeralKeyLen)
@@ -93,7 +120,7 @@ func CreateEphemeralKey() (eKey []byte, ts time.Time, err error) {
 	return
 }
 
-// Create Data key. Key saved in data table "secrets", column "data_key"
+// Create Data key. Key saved in data table "secrets", column "data_key".
 func CreateDataKey() (dKey []byte, ts time.Time, err error) {
 	dKey, err = createKey(DataKeyLen)
 	ts = time.Now()
@@ -157,7 +184,7 @@ func DecodeData(dKey []byte, coded []byte) (data []byte, err error) {
 	return
 }
 
-// Get nonce and cipher from string, help func
+// Get nonce and cipher from string, help func.
 func getCryptData(key []byte) (nonce []byte, aesgcm cipher.AEAD, err error) {
 	hkey := sha256.Sum256(key)
 
@@ -185,35 +212,77 @@ func (k *Keeper) AddSecret(ctx context.Context, userID string, dataType entities
 	dKey, _, err := CreateDataKey()
 	if err != nil {
 		zap.S().Errorln("Error create data key: ", err)
-		return nil, err
+		return nil,  err
 	}
 	// Encode date before store.
 	datac, err := EncodeData(dKey, data)
 	if err != nil {
 		zap.S().Errorln("Error encode data: ", err)
-		return nil, err
+		return nil,  err
 	}
 	// Get Ephemeral current key.
 	eKey := k.GetActualEKey()
 	dKeyc, err := EncodeKey(dKey, eKey.EKey)
 	if err != nil {
 		zap.S().Errorln("Error getting ephemeral key: ", err)
-		return nil, err
+		return nil,  err
 	}
 
-	dbSite := entities.NewSecretEncoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: eKey.TS, DKey: dKeyc, Uploaded: time.Now()}, DataCr: datac}
-
-	secretID, err = k.stor.AddSite(ctx, dbSite)
+	secret := entities.NewSecretEncoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: eKey.TS, DKeyCr: dKeyc, Uploaded: time.Now()}, DataCr: datac}
+	secretID, err = k.stor.AddSecretStor(ctx, secret, dataType)
 	if err != nil {
 		zap.S().Errorln("Error adding site credentials: ", err)
-		return nil, err
+		return nil,  err
 	}
 	return
 }
 
-func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entities.SecretType) (secrets []entities.SecretDecoded, err error) {
+// Common update method for all data types to store cypted data in DB.
+func (k *Keeper) UpdateSecret(ctx context.Context, userID string, dataType entities.SecretType, data []byte, secretID string) (err error) {
+	// Get data key.
+	dKey, _, err := CreateDataKey()
+	if err != nil {
+		zap.S().Errorln("Error create data key: ", err)
+		return err
+	}
+	// Encode date before store.
+	datac, err := EncodeData(dKey, data)
+	if err != nil {
+		zap.S().Errorln("Error encode data: ", err)
+		return err
+	}
+	// Get Ephemeral current key.
+	eKey := k.GetActualEKey()
+	dKeyc, err := EncodeKey(dKey, eKey.EKey)
+	if err != nil {
+		zap.S().Errorln("Error getting ephemeral key: ", err)
+		return err
+	}
+
+	secret := entities.NewSecretEncoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: eKey.TS, DKeyCr: dKeyc, Uploaded: time.Now()}, DataCr: datac}
+	err = k.stor.UpdateSecretStor(ctx, secret, secretID)
+	if err != nil {
+		zap.S().Errorln("Error adding site credentials: ", err)
+		return err
+	}
+	return
+}
+
+// Common delete method for all data types to store cypted data in DB.
+func (k *Keeper) DeleteSecret(ctx context.Context, secretID string) (err error) {
+
+	err = k.stor.DeleteSecretStor(ctx, secretID)
+	if err != nil {
+		zap.S().Errorln("Error adding site credentials: ", err)
+		return err
+	}
+	return
+}
+
+// Get all secret from storage particular type.
+func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entities.SecretType) (secrets []*entities.SecretDecoded, err error) {
 	// Load all user's sites coded credentials from database.
-	secretsc, err := k.stor.GetSites(ctx, userID, dataType)
+	secretsc, err := k.stor.GetSecretsStor(ctx, userID, dataType)
 	if err != nil {
 		zap.S().Errorln("Error getting site credentials: ", err)
 		return nil, err
@@ -221,9 +290,13 @@ func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entitie
 
 	for _, secret := range secretsc {
 		// Get ephemeral key (version from ts in db) for decode data key.
-		eKey := k.GetEKey(secret.EKeyVer)
+		eKey, err := k.GetEKey(secret.EKeyVer)
+		if err != nil {
+			zap.S().Errorln("EKey not found: ", err)
+			return nil, err
+		}
 		// Decode dKeyc
-		dKey, err := DecodeKey(secret.DKey, eKey.EKey)
+		dKey, err := DecodeKey(secret.DKeyCr, eKey.EKey)
 		if err != nil {
 			zap.S().Errorln("Error decode data key: ", err)
 			return nil, err
@@ -235,9 +308,40 @@ func (k *Keeper) GetSecrets(ctx context.Context, userID string, dataType entitie
 			return nil, err
 		}
 
-		secretDecoded := entities.SecretDecoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: secret.EKeyVer, Uploaded: secret.Uploaded}, UUID: secret.UUID, Data: data}
-		//Definition: newSite.Definition, SiteID: dbSite.UUID.String(), Site: newSite.Site, Slogin: newSite.Slogin, Spw: newSite.Spw}
+		secretDecoded := &entities.SecretDecoded{NewSecret: entities.NewSecret{UserID: userID, Type: dataType, EKeyVer: secret.EKeyVer, Uploaded: secret.Uploaded}, SecretID: secret.SecretID, Data: data}
 		secrets = append(secrets, secretDecoded)
 	}
+	return
+}
+
+// Get all secret from storage by secretID.
+func (k *Keeper) GetSecret(ctx context.Context, secretID string) (secret *entities.SecretDecoded, dKey []byte, err error) {
+	// Load all user's sites coded credentials from database.
+	secretsc, err := k.stor.GetSecretStor(ctx, secretID)
+
+	if err != nil {
+		zap.S().Errorln("Error getting site credentials: ", err)
+		return nil, nil, err
+	}
+
+	// Get ephemeral key (version from ts in db) for decode data key.
+	eKey, err := k.GetEKey(secretsc.EKeyVer)
+	if err != nil {
+		zap.S().Errorln("EKey not found: ", err)
+		return nil, nil, err
+	}
+	// Decode dKeyc
+	dKey, err = DecodeKey(secretsc.DKeyCr, eKey.EKey)
+	if err != nil {
+		zap.S().Errorln("Error decode data key: ", err)
+		return nil, nil, err
+	}
+	// Decode data.
+	data, err := DecodeData(dKey, secretsc.DataCr)
+	if err != nil {
+		zap.S().Errorln("Error decode stored data: ", err)
+		return nil, nil, err
+	}
+	secret = &entities.SecretDecoded{NewSecret: entities.NewSecret{UserID: secretsc.UserID, Type: secretsc.Type, EKeyVer: eKey.TS, DKeyCr: dKey, Uploaded: secretsc.Uploaded}, SecretID: secretsc.SecretID, Data: data}
 	return
 }

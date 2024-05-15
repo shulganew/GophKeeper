@@ -13,7 +13,7 @@ const (
 	SITE SecretType = "SITE"
 	CARD SecretType = "CARD"
 	TEXT SecretType = "TEXT"
-	BIN  SecretType = "BIN"
+	FILE SecretType = "BIN"
 )
 
 func (s *SecretType) String() string {
@@ -23,23 +23,24 @@ func (s *SecretType) String() string {
 // DB DTO type for storing secter data.
 // OAPI pattern - new mean struct without id (new constructor),
 // id will be retruned by DB
+// !!! Each encodeted date type has own ID, for ex Gfile has gfileID, whitch equal secredtID in database. For ex secredtID type FILE == gfileID.
 type NewSecret struct {
-	UserID   string     `db:"user_id"`
 	Type     SecretType `db:"type"` // Type of data - Site data, Credit card, Text or file.
 	EKeyVer  time.Time  `db:"ekey_version"`
-	DKey     []byte     `db:"dkey"`
 	Uploaded time.Time  `db:"uploaded"`
+	UserID   string     `db:"user_id"`
+	DKeyCr   []byte     `db:"dkey"`
 }
 type SecretDecoded struct {
 	NewSecret
-	UUID uuid.UUID
-	Data []byte
+	Data     []byte
+	SecretID uuid.UUID
 }
 
 type SecretEncoded struct {
 	NewSecret
-	UUID   uuid.UUID `db:"secret_id"` // Stored secretID.
-	DataCr []byte    `db:"data"`      // Decrypted data.
+	DataCr   []byte    `db:"data"`      // Decrypted data.
+	SecretID uuid.UUID `db:"secret_id"` // Stored secretID.
 }
 
 type NewSecretDecoded struct {
@@ -47,7 +48,7 @@ type NewSecretDecoded struct {
 	Data []byte // Stored decod data.
 }
 
-// Data in struct with crypted data.
+// NewSecretEncoded data in struct with crypted data.
 type NewSecretEncoded struct {
 	NewSecret
 	DataCr []byte `db:"data"` // Stored crypted data - data crypted.

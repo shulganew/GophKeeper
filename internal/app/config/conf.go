@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/shulganew/GophKeeper/internal/app/validators"
@@ -20,18 +21,24 @@ type Config struct {
 	// dsn connection string
 	DSN string
 
-	PassJWT string
+	PathJWT string
 
 	MasterKey string // Master password for GophKeeper storage.
+
+	Backetmi string // MINIO backet
+	IDmi     string
+	Secretmi string
 }
 
 func InitConfig() Config {
 	config := Config{}
 	// read command line argue
-	serverAddress := flag.String("a", "localhost:8080", "Service GKeeper address")
+	serverAddress := flag.String("a", "localhost:8443", "Service GKeeper address")
 	dsnf := flag.String("d", "", "Data Source Name for DataBase connection")
-	authJWT := flag.String("p", "JWTsecret", "JWT private key")
-	master := flag.String("m", "MasterKey", "Master password for GophKeeper storage")
+	jwtPath := flag.String("p", "cert/jwtpkey.pem", "path to JWT private key file, ex cert/jwtpkey.pem")
+	master := flag.String("m", "NewMasterKey", "Master password for GophKeeper storage")
+	mb := flag.String("b", "gohpkeeper:GYD6J3FzdOVG49aB6Ycb:Ms37ZNWDG9CLFQhW92tA36NfgZa1zgy0z76bVmIJ", "MINIO backet for files, format is backet:ID:Secret")
+
 	flag.Parse()
 
 	// Check and parse URL.
@@ -44,10 +51,17 @@ func InitConfig() Config {
 	addr, exist := os.LookupEnv(("RUN_ADDRESS"))
 
 	// JWT password for users auth.
-	config.PassJWT = *authJWT
+	config.PathJWT = *jwtPath
 
 	// Master pass.
 	config.MasterKey = *master
+
+	// MINIO.
+	minioConf := strings.Split(*mb, ":")
+
+	config.Backetmi = minioConf[0]
+	config.IDmi = minioConf[1]
+	config.Secretmi = minioConf[2]
 
 	// if env var does not exist  - set def value
 	if exist {

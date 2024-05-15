@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/shulganew/GophKeeper/internal/rest/oapi"
+	"github.com/shulganew/GophKeeper/internal/api/oapi"
 )
 
 // sendKeeperError wraps sending of an error in the Error format, and

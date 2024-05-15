@@ -10,7 +10,7 @@ import (
 
 // Parse server and url address.
 func CheckURL(address string) (host string, port string) {
-	//Parse address
+	// Parse address.
 	link, err := url.Parse(strings.TrimSpace(address))
 	if err != nil {
 		zap.S().Errorln("Error parsing url: ", err, " return def localhost:8080")
@@ -19,7 +19,7 @@ func CheckURL(address string) (host string, port string) {
 
 	// Check shema.
 	if link.Scheme != "http" {
-		//Shema not found, use http
+		// Shema not found, use http.
 		address = "http://" + address
 	}
 
