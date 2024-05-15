@@ -52,7 +52,7 @@ func GetUserID(v JWSValidator, req *http.Request) (string, error) {
 	if !isExisted {
 		return "", fmt.Errorf("userID not found: %w", err)
 	}
-	
+
 	iserID, ok := userIDInt.(string)
 	if !ok {
 		return "", fmt.Errorf("userID can't cast to string: %w", err)
@@ -101,8 +101,6 @@ func Authenticate(v JWSValidator, ctx context.Context, input *openapi3filter.Aut
 	if !alive {
 		zap.S().Infoln("Token not alive.")
 		return fmt.Errorf("token not alive")
-	} else {
-		zap.S().Infoln("Token alive.", token.Expiration(), time.Now().UTC())
 	}
 
 	return nil
