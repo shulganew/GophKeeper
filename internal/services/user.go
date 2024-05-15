@@ -8,6 +8,7 @@ import (
 
 	"github.com/jackc/pgerrcode"
 	"github.com/lib/pq"
+	"github.com/pquerna/otp/totp"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/app/config"
 	"go.uber.org/zap"
@@ -32,8 +33,17 @@ func (k *Keeper) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Create OTP Secret from new user.
+	otpKey, err := totp.Generate(totp.GenerateOpts{
+		Issuer:      "dlearn.ru",
+		AccountName: user.Login,
+	})
+	if err != nil {
+		zap.S().Errorln("Can't crate OTP key", err)
+	}
+
 	// Add user to database.
-	userID, err := k.stor.AddUser(r.Context(), user.Login, hash, user.Email)
+	_, err = k.stor.AddUser(r.Context(), user.Login, hash, user.Email, otpKey.Secret())
 	if err != nil {
 		var pgErr *pq.Error
 		// If URL exist in DataBase
@@ -46,21 +56,10 @@ func (k *Keeper) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create jwt with access to all permissions.
-	allowAll, err := k.ua.CreateJWSWithClaims(userID.String(), []string{})
-	if err != nil {
-		zap.S().Errorln("Error creating jwt string: ", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	w.Header().Add("Content-Type", "text/plain")
-	w.Header().Add("Authorization", config.AuthPrefix+string(allowAll))
-
 	// set status code 201
 	w.WriteHeader(http.StatusCreated)
 
-	_, err = w.Write([]byte("User added."))
+	_, err = w.Write([]byte(otpKey.Secret()))
 	if err != nil {
 		zap.S().Errorln("Can't write to response in SetUser handler", err)
 	}
@@ -78,17 +77,24 @@ func (k *Keeper) Login(w http.ResponseWriter, r *http.Request) {
 
 	// Get User from storage
 	dbUser, err := k.stor.GetByLogin(r.Context(), nuser.Login)
-	zap.S().Infof("User form db: %v \n", dbUser)
 	if err != nil {
 		zap.S().Infoln("User not found by login. ", err)
-		http.Error(w, "Wrong login or password", http.StatusUnauthorized)
+		http.Error(w, "Wrong login or password or otp", http.StatusUnauthorized)
+		return
+	}
+	// Check OTP is correct.
+	valid := totp.Validate(nuser.Otp, dbUser.Secret)
+	if !valid {
+		zap.S().Infoln("User enter wrong OTP. ")
+		http.Error(w, "Wrong login or password or otp", http.StatusUnauthorized)
 		return
 	}
 
 	// Check pass is correct
 	err = k.CheckPassword(nuser.Password, dbUser.PassHash)
 	if err != nil {
-		http.Error(w, "Wrong login or password", http.StatusUnauthorized)
+		http.Error(w, "Wrong login or password or otp", http.StatusUnauthorized)
+		return
 	}
 
 	// Create jwt with access.

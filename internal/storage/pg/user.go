@@ -12,15 +12,15 @@ import (
 	"go.uber.org/zap"
 )
 
-func (r *Repo) AddUser(ctx context.Context, login, hash, email string) (*uuid.UUID, error) {
+func (r *Repo) AddUser(ctx context.Context, login, hash, email, otpKey string) (*uuid.UUID, error) {
 	query := `
-	INSERT INTO users (login, password_hash, email) 
-	VALUES ($1, $2, $3)
+	INSERT INTO users (login, password_hash, email, otp_key) 
+	VALUES ($1, $2, $3, $4)
 	RETURNING user_id
 	`
 	userID := &uuid.UUID{}
 
-	err := r.db.GetContext(ctx, userID, query, login, hash, email)
+	err := r.db.GetContext(ctx, userID, query, login, hash, email, otpKey)
 	if err != nil {
 		var pgErr *pq.Error
 		// If URL exist in DataBase.
@@ -35,7 +35,7 @@ func (r *Repo) AddUser(ctx context.Context, login, hash, email string) (*uuid.UU
 // Retrive User by login.
 func (r *Repo) GetByLogin(ctx context.Context, login string) (*entities.User, error) {
 	query := `
-	SELECT user_id, password_hash, email
+	SELECT user_id, password_hash, email, otp_key
 	FROM users 
 	WHERE login = $1
 	`

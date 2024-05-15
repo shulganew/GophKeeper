@@ -3,6 +3,7 @@ package jwt
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"time"
 
 	"github.com/deepmap/oapi-codegen/v2/pkg/ecdsafile"
 	"github.com/lestrrat-go/jwx/jwa"
@@ -12,10 +13,11 @@ import (
 )
 
 const KeyID = "key-id"
-const FakeIssuer = "fake-issuer"
-const FakeAudience = "example-users"
+const Issuer = "issuer"
+const Audience = "example-users"
 const PermissionsClaim = "perm"
 const UserIdentification = "userID"
+const TTL = 24 * time.Hour // JWT time life.
 
 type UserAuthenticator struct {
 	PrivateKey *ecdsa.PrivateKey
@@ -59,7 +61,7 @@ func NewUserAuthenticator(key []byte) (*UserAuthenticator, error) {
 // trust the JWT are present and with the correct values.
 func (f *UserAuthenticator) ValidateJWS(jwsString string) (jwt.Token, error) {
 	return jwt.Parse([]byte(jwsString), jwt.WithKeySet(f.KeySet),
-		jwt.WithAudience(FakeAudience), jwt.WithIssuer(FakeIssuer))
+		jwt.WithAudience(Audience), jwt.WithIssuer(Issuer))
 }
 
 // SignToken takes a JWT and signs it with our private key, returning a JWS.
@@ -81,14 +83,20 @@ func (f *UserAuthenticator) SignToken(t jwt.Token) ([]byte, error) {
 // claims.
 func (f *UserAuthenticator) CreateJWSWithClaims(userID string, claims []string) ([]byte, error) {
 	t := jwt.New()
-	err := t.Set(jwt.IssuerKey, FakeIssuer)
+	err := t.Set(jwt.IssuerKey, Issuer)
 	if err != nil {
 		return nil, fmt.Errorf("setting issuer: %w", err)
 	}
-	err = t.Set(jwt.AudienceKey, FakeAudience)
+	err = t.Set(jwt.AudienceKey, Audience)
 	if err != nil {
 		return nil, fmt.Errorf("setting audience: %w", err)
 	}
+
+	err = t.Set(jwt.ExpirationKey, time.Now().UTC().Add(TTL).Unix())
+	if err != nil {
+		return nil, fmt.Errorf("setting audience: %w", err)
+	}
+
 	err = t.Set(PermissionsClaim, claims)
 	if err != nil {
 		return nil, fmt.Errorf("setting permissions: %w", err)

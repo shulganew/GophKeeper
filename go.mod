@@ -3,6 +3,7 @@ module github.com/shulganew/GophKeeper
 go 1.22.0
 
 require (
+	github.com/alecthomas/units v0.0.0-20231202071711-9a357b53e9c9
 	github.com/deepmap/oapi-codegen/v2 v2.1.0
 	github.com/getkin/kin-openapi v0.122.0
 	github.com/go-chi/chi/v5 v5.0.12
@@ -17,14 +18,15 @@ require (
 	github.com/oapi-codegen/nethttp-middleware v1.0.1
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/oapi-codegen/testutil v1.1.0
+	github.com/pquerna/otp v1.4.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.22.0
 )
 
 require (
-	github.com/alecthomas/units v0.0.0-20231202071711-9a357b53e9c9 // indirect
 	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
+	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect

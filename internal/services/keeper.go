@@ -39,7 +39,7 @@ func NewKeeper(ctx context.Context, stor Keeperer, fstor FileKeeper, conf config
 }
 
 type Keeperer interface {
-	AddUser(ctx context.Context, login, hash, email string) (userID *uuid.UUID, err error)
+	AddUser(ctx context.Context, login, hash, email, otpKey string) (userID *uuid.UUID, err error)
 	GetByLogin(ctx context.Context, login string) (userID *entities.User, err error)
 
 	// Entities credentials methods (site, card, text, file)

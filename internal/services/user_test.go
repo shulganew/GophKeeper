@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/gofrs/uuid"
 	"github.com/golang/mock/gomock"
 	"github.com/oapi-codegen/testutil"
+	"github.com/pquerna/otp/totp"
 	"github.com/shulganew/GophKeeper/internal/api/jwt"
 	"github.com/shulganew/GophKeeper/internal/api/oapi"
 	"github.com/shulganew/GophKeeper/internal/api/router"
@@ -115,9 +118,10 @@ func TestUser(t *testing.T) {
 			require.NoError(t, err)
 
 			_ = repo.EXPECT().
-				AddUser(gomock.Any(), tt.userRegister.Login, gomock.Any(), tt.userRegister.Email).
-				DoAndReturn(func(_ any, login string, hash string, email string) (*uuid.UUID, error) {
-					userStorage[login] = entities.User{UUID: userID, Login: login, PassHash: hash, Email: email}
+				AddUser(gomock.Any(), tt.userRegister.Login, gomock.Any(), tt.userRegister.Email, gomock.Any()).
+				DoAndReturn(func(_ any, login string, hash string, email string, key string) (*uuid.UUID, error) {
+					require.NoError(t, err)
+					userStorage[login] = entities.User{UUID: userID, Login: login, PassHash: hash, Email: email, Secret: key}
 					return &userID, nil
 				}).
 				AnyTimes()
@@ -125,8 +129,12 @@ func TestUser(t *testing.T) {
 			jsonSite, err := json.Marshal(tt.userRegister)
 			require.NoError(t, err)
 
-			// Create request.
+			// Create register request.
 			rr := testutil.NewRequest().Post(tt.register).WithContentType("application/json").WithBody(jsonSite).GoWithHTTPHandler(t, rt).Recorder
+			data, err := io.ReadAll(rr.Body)
+			require.NoError(t, err)
+			// Secret for OTP
+			secret := string(data)
 			require.Equal(t, tt.statusRegister, rr.Code)
 
 			// Check user login.
@@ -143,9 +151,13 @@ func TestUser(t *testing.T) {
 				}).
 				AnyTimes()
 
-			// Create request.
+			// Add otp for request.
+			tt.userLogin.Otp, err = totp.GenerateCode(secret, time.Now())
+			require.NoError(t, err)
+
 			jsonSite, err = json.Marshal(tt.userLogin)
 			require.NoError(t, err)
+			// Create login request.
 			rr = testutil.NewRequest().Post(tt.login).WithContentType("application/json").WithBody(jsonSite).GoWithHTTPHandler(t, rt).Recorder
 			require.Equal(t, tt.statusLogin, rr.Code)
 		})

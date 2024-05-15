@@ -11,12 +11,11 @@ import (
 )
 
 func main() {
+	// Init application logging.
+	app.InitLog()
 
 	// Get application config.
 	conf := config.InitConfig()
-
-	// Init application logging.
-	app.InitLog()
 
 	zap.S().Infoln("Starting GophKeeper...")
 

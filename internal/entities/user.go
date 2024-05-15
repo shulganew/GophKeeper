@@ -8,4 +8,5 @@ type User struct {
 	PassHash string    `db:"password_hash"`
 	Email    string    `db:"email"`
 	UUID     uuid.UUID `db:"user_id"`
+	Secret   string    `db:"otp_key"` // OTP key secret.
 }

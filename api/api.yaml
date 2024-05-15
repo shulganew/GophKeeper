@@ -28,9 +28,17 @@ paths:
               $ref: '#/components/schemas/NewUser'  
       responses:
         '201':
-          description: User created
+          description: User created, return OTP secret
+          content:
+            plain/text:
+              schema:
+                type: string
+                format: string
         '400':
           description: Error creating hash from password
+        '401':
+          description: user has no otp pass, create new
+
         '409':
           description: Login is used
         '500':
@@ -561,6 +569,7 @@ components:
         - login
         - password
         - email
+        - otp
       properties:
         login:
           type: string
@@ -571,6 +580,9 @@ components:
         email:
           type: string
           description: Users email
+        otp:
+          type: string
+          description: User's one time pass
     Site:
       allOf:
         - $ref: '#/components/schemas/NewSite'

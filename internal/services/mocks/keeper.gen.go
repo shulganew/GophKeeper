@@ -53,18 +53,18 @@ func (mr *MockKeepererMockRecorder) AddSecretStor(ctx, entity, stype interface{}
 }
 
 // AddUser mocks base method.
-func (m *MockKeeperer) AddUser(ctx context.Context, login, hash, email string) (*uuid.UUID, error) {
+func (m *MockKeeperer) AddUser(ctx context.Context, login, hash, email, otpKey string) (*uuid.UUID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddUser", ctx, login, hash, email)
+	ret := m.ctrl.Call(m, "AddUser", ctx, login, hash, email, otpKey)
 	ret0, _ := ret[0].(*uuid.UUID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // AddUser indicates an expected call of AddUser.
-func (mr *MockKeepererMockRecorder) AddUser(ctx, login, hash, email interface{}) *gomock.Call {
+func (mr *MockKeepererMockRecorder) AddUser(ctx, login, hash, email, otpKey interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUser", reflect.TypeOf((*MockKeeperer)(nil).AddUser), ctx, login, hash, email)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddUser", reflect.TypeOf((*MockKeeperer)(nil).AddUser), ctx, login, hash, email, otpKey)
 }
 
 // DeleteSecretStor mocks base method.

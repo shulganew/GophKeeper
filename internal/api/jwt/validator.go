@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/shulganew/GophKeeper/internal/app/config"
+	"go.uber.org/zap"
 )
 
 // JWSValidator is used to validate JWS payloads and return a JWT if they're valid.
@@ -50,6 +52,7 @@ func GetUserID(v JWSValidator, req *http.Request) (string, error) {
 	if !isExisted {
 		return "", fmt.Errorf("userID not found: %w", err)
 	}
+	
 	iserID, ok := userIDInt.(string)
 	if !ok {
 		return "", fmt.Errorf("userID can't cast to string: %w", err)
@@ -88,11 +91,18 @@ func Authenticate(v JWSValidator, ctx context.Context, input *openapi3filter.Aut
 
 	// We've got a valid token now, and we can look into its claims to see whether
 	// they match. Every single scope must be present in the claims.
-
 	err = CheckTokenClaims(input.Scopes, token)
-
 	if err != nil {
 		return fmt.Errorf("token claims don't match: %w", err)
+	}
+
+	// Check token TTL.
+	alive := token.Expiration().After(time.Now())
+	if !alive {
+		zap.S().Infoln("Token not alive.")
+		return fmt.Errorf("token not alive")
+	} else {
+		zap.S().Infoln("Token alive.", token.Expiration(), time.Now().UTC())
 	}
 
 	return nil
