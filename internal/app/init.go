@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,20 +15,53 @@ import (
 	"github.com/shulganew/GophKeeper/internal/storage/s3"
 
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 )
 
-func InitLog() zap.SugaredLogger {
-	logger, err := zap.NewDevelopment()
+func InitLog(conf config.Config) zap.SugaredLogger {
+	lvl, err := zap.ParseAtomicLevel(conf.ZapLevel)
 	if err != nil {
+		fmt.Println("Can't set log level: ", err, conf.ZapLevel)
 		panic(err)
 	}
 
-	zap.ReplaceGlobals(logger)
+	var op []string
+	var ep []string
+	if conf.RunLocal {
+		op = []string{"stdout"}
+		ep = []string{"stderr"}
+	} else {
+		op = []string{conf.ZapPath}
+		ep = []string{conf.ZapPath}
+	}
+
+	cfg := zap.Config{
+		Encoding:         "console",
+		Level:            lvl,
+		OutputPaths:      op,
+		ErrorOutputPaths: ep,
+		EncoderConfig: zapcore.EncoderConfig{
+			MessageKey: "message",
+
+			LevelKey:    "level",
+			EncodeLevel: zapcore.CapitalLevelEncoder,
+
+			TimeKey:    "time",
+			EncodeTime: zapcore.RFC3339TimeEncoder,
+
+			CallerKey:    "caller",
+			EncodeCaller: zapcore.ShortCallerEncoder,
+		},
+	}
+
+	zapLogger := zap.Must(cfg.Build())
+	zapLogger.Info("logger construction succeeded")
+	zap.ReplaceGlobals(zapLogger)
 	defer func() {
-		_ = logger.Sync()
+		_ = zapLogger.Sync()
 	}()
 
-	sugar := *logger.Sugar()
+	sugar := *zapLogger.Sugar()
 
 	defer func() {
 		_ = sugar.Sync()

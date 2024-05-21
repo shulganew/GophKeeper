@@ -12,23 +12,6 @@ https://min.io/docs/minio/container/index.html
 Get and set data : habr example
 https://habr.com/ru/companies/ozontech/articles/586024/?code=9040949a58b797539b7c7d5b3a3462e2&state=Zfbrcwb5DSFDKXKFDgu6bkBC&hl=ru
 
-## Create certificates
-
-Generate private key:
-```
-openssl genrsa -out pkey.pem 2048
-```
-Generate CSR: (In the "Common Name" set the domain of your service provider app)
-```
-openssl req -new -key pkey.pem -out server.csr
-```
-
-Generate Self Signed Cert
-```
-openssl x509 -req -days 365 -in server.csr -signkey pkey.pem -out pkey.crt
-rm pkey.pem
-```
-
 
 ## Mock generate 
 
@@ -65,15 +48,9 @@ mockgen -source=internal/services/keeper.go \
 -destination mock-interfaces.go github.com/yourhandle/worker Doer
 ```
 
-## Переменные окружения
+## ENV variables
 
-Переменная окружения DSN:
-```bash
-export DATABASE_URI=postgresql://keeper:1@localhost/keeper?sslmode=disable
-```
-Переменная RUN_ADDRESS - адреc и порт сервиса Gophermart:
-```bash
-export RUN_ADDRESS=localhost:8088
+
 ```
 
 ## Запуск Postgres в контейнере
@@ -113,3 +90,18 @@ openssl ecparam -name prime256v1 -genkey -noout -out cert/jwtpkey.pem
 We are using a hard coded key here in this example, but in real applications,
 you would never do this. Your JWT signing key must never be in your application,
 only the public key.
+
+## Create certificates TLS
+Generate private key:
+```bash
+openssl genrsa -out pkey.pem 2048
+```
+Generate CSR: (In the "Common Name" set the domain of your service provider app)
+```bash
+openssl req -new -key pkey.pem -out server.csr
+```
+Generate Self Signed Cert
+```bash
+openssl x509 -req -days 365 -in server.csr -signkey pkey.pem -out pkey.crt
+rm pkey.pem
+```

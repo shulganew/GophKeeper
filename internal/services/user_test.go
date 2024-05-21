@@ -56,17 +56,17 @@ func TestUser(t *testing.T) {
 		},
 	}
 
-	app.InitLog()
 	ctx := context.Background()
 
 	conf := &config.Config{}
-
 	// Init application
 	conf.Address = "localhost:8088"
-	conf.PathJWT = "JWTsecret"
 	conf.MasterKey = "MasterPw"
 	conf.DSN = ""
 	conf.PathJWT = "cert/jwtpkey.pem"
+	conf.ZapLevel = "debug"
+	conf.RunLocal = true
+	app.InitLog(*conf)
 	// init mock.
 
 	ctrl := gomock.NewController(t)

@@ -16,12 +16,11 @@ const timeoutServerShutdown = time.Second * 5
 const timeoutShutdown = time.Second * 20
 
 // Manage web server.
-// TODO add cert file path to config.
 func StartAPI(ctx context.Context, conf *config.Config, componentsErrs chan error, r *chi.Mux) (restDone chan struct{}) {
 	// Start web server.
 	var srv = http.Server{Addr: conf.Address, Handler: r}
 	go func() {
-		if err := srv.ListenAndServeTLS("./cert/server.crt", "./cert/pkey.pem"); err != nil {
+		if err := srv.ListenAndServeTLS(conf.TLSPub, conf.TLSPK); err != nil {
 			if errors.Is(err, http.ErrServerClosed) {
 				return
 			}

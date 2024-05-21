@@ -77,3 +77,11 @@ _golangci-lint-run: _golangci-lint-reports-mkdir
 .PHONY: golangci-lint-clean
 golangci-lint-clean:
 	sudo rm -rf ./golangci-lint 
+
+
+
+.PHONY: build_linux
+build_linux: export GOOS=linux
+build_linux: export GOARCH=amd64
+build_linux: 
+	go build -o cmd/gkeeper/gk_$(GOOS)_$(GOARCH) cmd/gkeeper/main.go
